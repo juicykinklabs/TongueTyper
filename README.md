@@ -7,6 +7,7 @@ A reinvented talking-gag-dildotyper platform with WiFi control, USB output, acce
  - GWR-firmware: ESP32-S3 firmware (platformio, arduino)
  - GWR-pcb: printed circuit board design files (KiCAD)
  - SD-Media: SD Card files and helper scripts
+    - Additional emojis can be found: https://www.emojiall.com/en/image-emoji-platform/apple/hd
  - [todo]: 3D models directory for step/stl
 
 ## Footer
