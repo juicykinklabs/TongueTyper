@@ -26,6 +26,10 @@ SdFat32 SD;
 Adafruit_GC9A01A tft(TFT_CS, TFT_DC); // not using hardware reset because it wasn't working WITH it
 Adafruit_ImageReader reader(SD);
 
+// ### GLOBAL STATE VARIABLES ###
+
+volatile uint32_t buttonSequence = 0b0; // need semaphore :3
+
 // temporary emoji filenames
 const char *emojiNames[] =
     {"1f351.bmp",
@@ -69,8 +73,7 @@ const char *emojiNames[] =
      "1f98b.bmp",
      "1fae3.bmp",
      "1fae4.bmp",
-     "1faea.bmp"}; //sz: 42 temp
-
+     "1faea.bmp"}; // sz: 42 temp
 
 void clearTFT()
 {
@@ -79,12 +82,13 @@ void clearTFT()
   tft.fillScreen(GC9A01A_BLACK);
 }
 
-void setTFTBrightness(float b) {
+void setTFTBrightness(float b)
+{
   const uint8_t TFT_PIN = D0;
   pinMode(TFT_PIN, OUTPUT); // OUTPUT or ANALOG?
   // analogWriteResolution(TFT_PIN, 8);
   // analogWriteFrequency(TFT_PIN, 100); // these were giving errors so lets leave em commented
-  analogWrite(TFT_PIN, (int) (255 * (b)));
+  analogWrite(TFT_PIN, (int)(255 * (b)));
 }
 
 void printDirectory(File32 dir, int depth = 0)
@@ -113,8 +117,8 @@ void printDirectory(File32 dir, int depth = 0)
   }
 }
 
-
-void demoBigTextDisplay() {
+void demoBigTextDisplay()
+{
   tft.fillScreen(GC9A01A_WHITE);
   tft.setTextColor(GC9A01A_BLACK);
 
@@ -190,6 +194,118 @@ void demoBigTextDisplay() {
     }
   }
 }
+
+void inputHandler(void *pv)
+{
+  // static uint32_t t_start = millis();
+  // static uint32_t t_completed = 0;
+  static uint32_t t_lastinteraction = 0;
+  static int32_t internalState = -1;
+  static const uint32_t BUTTON_TIMEOUT = 5000; // ms
+  static const uint32_t BUTTON_DEBOUNCE = 100; // ms
+  static const uint32_t INTRA_CMD_DELAY = 500;
+  static boolean button_released = true;
+
+  // -1: waiting for first button press or for button sequence to clear by consumer
+  // 1-6: a button was pressed recently enough that a second press should update global buttonSequence
+
+  while (1)
+  {
+    if (digitalRead(BUTTON1) && digitalRead(BUTTON2) && digitalRead(BUTTON3))
+      {
+        button_released = true; // all buttons up, allow next valid pass to update state
+      }
+
+    if (button_released && (internalState == -1) && (buttonSequence == 0))
+    {
+      // in the actual code this would be handled by an interrupt from the gpio expander
+      // need debouncing too
+      if (!digitalRead(BUTTON1))
+      {
+        internalState = 1;
+        button_released = false;
+        t_lastinteraction = millis();
+      }
+      if (!digitalRead(BUTTON2))
+      {
+        internalState = 2;
+        button_released = false;
+        t_lastinteraction = millis();
+      }
+      if (!digitalRead(BUTTON3))
+      {
+        internalState = 3;
+        button_released = false;
+        t_lastinteraction = millis();
+      }
+    }
+    else
+    {
+      // button was pressed, but how recently?
+      if (millis() - t_lastinteraction > BUTTON_TIMEOUT)
+      {
+        internalState = -1;
+        Serial.println("took too long, internalstate=-1");
+      }
+      else if (millis() - t_lastinteraction > BUTTON_DEBOUNCE)
+      {
+        if (digitalRead(BUTTON1) && digitalRead(BUTTON2) && digitalRead(BUTTON3))
+        {
+          button_released = true; // all buttons up, allow next valid pass to update state
+          Serial.println("awaiting secondary button press...");
+        }
+        if (button_released)
+        {
+          // todo: use an array of buttons and loop over them
+          if (!digitalRead(BUTTON1))
+          {
+            buttonSequence = 10 * internalState + 1;
+            t_lastinteraction = millis();
+            internalState = -1;
+            button_released = false;
+          }
+          if (!digitalRead(BUTTON2))
+          {
+            buttonSequence = 10 * internalState + 2;
+            t_lastinteraction = millis();
+            internalState = -1;
+            button_released = false;
+          }
+          if (!digitalRead(BUTTON3))
+          {
+            buttonSequence = 10 * internalState + 3;
+            t_lastinteraction = millis();
+            internalState = -1;
+            button_released = false;
+          }
+
+          delay(100);
+        }
+      }
+    }
+
+    vTaskDelay((1000 / 20) / portTICK_PERIOD_MS); // run at 20 Hz
+  }
+
+  vTaskDelete(NULL);
+}
+
+void buttonSequenceConsumer(void *pv)
+{
+
+  while (1)
+  {
+    if (buttonSequence > 0)
+    {
+      Serial.print("oh hey: ");
+      Serial.println(buttonSequence);
+      buttonSequence = 0;
+    }
+    vTaskDelay((1000 / 20) / portTICK_PERIOD_MS); // run at 20 Hz
+  }
+  vTaskDelete(NULL);
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -225,6 +341,9 @@ void setup()
   printDirectory(root);
   root.close();
 
+  xTaskCreate(inputHandler, "Button Input Handler", 4096, NULL, 5, NULL);
+  xTaskCreate(buttonSequenceConsumer, "Thing that uses buttons", 4096, NULL, 4, NULL);
+
   delay(500);
 }
 
@@ -232,11 +351,13 @@ void loop(void)
 {
 
   delay(1000);
-  setTFTBrightness(0.15);
+  setTFTBrightness(0.5);
   // todo: make customizable borders with circles. eg trans flag?
   char currentFile[10];
-  for (int x = 0; x < 42; x++) {
+  for (int x = 0; x < 42; x++)
+  {
     strcpy(currentFile, emojiNames[x]);
     reader.drawBMP(currentFile, tft, 0, 0, true);
+    vTaskDelay(250 / portTICK_PERIOD_MS);
   }
 }
