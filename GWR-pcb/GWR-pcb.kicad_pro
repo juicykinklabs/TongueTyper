@@ -39,9 +39,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 0.8,
-          "height": 1.27,
-          "width": 2.54
+          "drill": 0.0,
+          "height": 0.5,
+          "width": 1.0
         },
         "silk_line_width": 0.15,
         "silk_text_italic": false,
@@ -50,7 +50,7 @@
         "silk_text_thickness": 0.1,
         "silk_text_upright": false,
         "zones": {
-          "min_clearance": 0.5
+          "min_clearance": 0.6
         }
       },
       "diff_pair_dimensions": [
@@ -151,27 +151,27 @@
       },
       "teardrop_options": [
         {
-          "td_onpthpad": true,
+          "td_onpthpad": false,
           "td_onroundshapesonly": false,
-          "td_onsmdpad": true,
+          "td_onsmdpad": false,
           "td_ontrackend": false,
           "td_onvia": true
         }
       ],
       "teardrop_parameters": [
         {
-          "td_allow_use_two_tracks": true,
-          "td_curve_segcount": 0,
-          "td_height_ratio": 1.0,
-          "td_length_ratio": 0.5,
-          "td_maxheight": 2.0,
-          "td_maxlen": 1.0,
+          "td_allow_use_two_tracks": false,
+          "td_curve_segcount": 1,
+          "td_height_ratio": 0.75,
+          "td_length_ratio": 0.25,
+          "td_maxheight": 0.8,
+          "td_maxlen": 0.25,
           "td_on_pad_in_zone": false,
           "td_target_name": "td_round_shape",
           "td_width_to_size_filter_ratio": 0.9
         },
         {
-          "td_allow_use_two_tracks": true,
+          "td_allow_use_two_tracks": false,
           "td_curve_segcount": 0,
           "td_height_ratio": 1.0,
           "td_length_ratio": 0.5,
@@ -182,7 +182,7 @@
           "td_width_to_size_filter_ratio": 0.9
         },
         {
-          "td_allow_use_two_tracks": true,
+          "td_allow_use_two_tracks": false,
           "td_curve_segcount": 0,
           "td_height_ratio": 1.0,
           "td_length_ratio": 0.5,
@@ -221,10 +221,10 @@
         "single_track_defaults": {
           "corner_radius_percentage": 80,
           "corner_style": 1,
-          "max_amplitude": 1.0,
-          "min_amplitude": 0.2,
+          "max_amplitude": 0.5,
+          "min_amplitude": 0.4,
           "single_sided": false,
-          "spacing": 0.6
+          "spacing": 0.8
         }
       },
       "via_dimensions": [
@@ -519,10 +519,23 @@
         "wire_width": 6
       },
       {
+        "clearance": 0.25,
+        "diff_pair_gap": 0.4,
+        "diff_pair_width": 0.25,
+        "name": "Audio",
+        "pcb_color": "rgb(194, 0, 194)",
+        "priority": 0,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.4,
+        "tuning_profile": "",
+        "via_diameter": 0.6,
+        "via_drill": 0.3
+      },
+      {
         "clearance": 0.2,
         "name": "I2S",
         "pcb_color": "rgb(0, 255, 0)",
-        "priority": 3,
+        "priority": 6,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.25,
         "tuning_profile": "",
@@ -530,10 +543,21 @@
         "via_drill": 0.3
       },
       {
+        "clearance": 0.2,
+        "name": "Motor",
+        "pcb_color": "rgb(132, 0, 0)",
+        "priority": 1,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.8,
+        "tuning_profile": "",
+        "via_diameter": 0.8,
+        "via_drill": 0.3
+      },
+      {
         "clearance": 0.25,
         "name": "POWERRAIL",
         "pcb_color": "rgb(255, 153, 0)",
-        "priority": 0,
+        "priority": 3,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.31,
         "tuning_profile": "",
@@ -541,10 +565,10 @@
         "via_drill": 0.3
       },
       {
-        "clearance": 0.25,
+        "clearance": 0.2,
         "name": "PWRGND",
         "pcb_color": "rgb(132, 132, 132)",
-        "priority": 2,
+        "priority": 5,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.31,
         "tuning_profile": "",
@@ -554,10 +578,10 @@
       {
         "clearance": 0.2,
         "name": "SIGNAL",
-        "pcb_color": "rgb(255, 0, 255)",
-        "priority": 1,
+        "pcb_color": "rgb(0, 132, 132)",
+        "priority": 4,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.3,
+        "track_width": 0.25,
         "tuning_profile": "",
         "via_diameter": 0.6,
         "via_drill": 0.3
@@ -566,12 +590,19 @@
         "clearance": 0.25,
         "name": "SPI",
         "pcb_color": "rgb(255, 255, 0)",
-        "priority": 4,
+        "priority": 7,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.25,
         "tuning_profile": "",
         "via_diameter": 0.6,
         "via_drill": 0.3
+      },
+      {
+        "name": "unconnected",
+        "pcb_color": "rgb(0, 0, 0)",
+        "priority": 2,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "tuning_profile": ""
       }
     ],
     "meta": {
@@ -615,6 +646,18 @@
       {
         "netclass": "SIGNAL",
         "pattern": "/BUTTON_*"
+      },
+      {
+        "netclass": "unconnected",
+        "pattern": "unconnected*"
+      },
+      {
+        "netclass": "Motor",
+        "pattern": "/MOTOR*"
+      },
+      {
+        "netclass": "Audio",
+        "pattern": "/AUDIO*"
       }
     ]
   },
@@ -751,7 +794,7 @@
         "uuid": "5ba9b62f-22ef-4dbd-b34f-1e4d5ec66edc"
       }
     ],
-    "used_designators": "C8",
+    "used_designators": "TP12,#PWR35-42",
     "variants": []
   },
   "sheets": [
