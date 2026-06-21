@@ -1,3 +1,4 @@
 GWR-pcb-backups/*
 *.lck
 .history
+*.step
