@@ -1,0 +1,368 @@
+#include <Arduino.h>
+
+#include <SPI.h>
+
+#include "SdFat_Adafruit_Fork.h"
+#include "Adafruit_ImageReader.h"
+#include "Adafruit_GC9A01A.h"
+#include "Adafruit_GFX.h"
+
+#include "FreeMono18pt7b.h"
+#include "FreeMonoBold24pt7b.h"
+
+#include "app_conf.h"
+
+// *** XIAO PINOUT HELPER ***
+//          USB PORT
+//   reset button  boot0 button
+//   led pmic      led gpio21
+//     GPIO1/D0     VBUS
+//     GPIO2/D1     GND
+//     GPIO3/D2     3V3 ldo out
+//     GPIO4/D3     GPIO9/D10
+//     GPIO5/D4     GPIO8/D9
+//     GPIO6/D5     GPIO7/D8
+//     GPIO43/D6    GPIO44/D7
+
+#define TFT_DC D1
+#define TFT_CS D2
+#define TFT_RST D3
+
+#define XIAO_SCK D8
+#define XIAO_MISO D9
+#define XIAO_MOSI D10
+
+#define SD_CS D4
+#define ADXL_CS D5
+
+SemaphoreHandle_t SPIbustransactionMutex = NULL;
+
+SdFat32 SD;
+Adafruit_GC9A01A tft(&SPI, TFT_DC, TFT_CS);
+Adafruit_ImageReader reader(SD);
+
+// ### GLOBAL STATE VARIABLES ###
+
+volatile uint32_t buttonSequence = 0b0; // need semaphore :3
+
+// temporary emoji filenames
+const char *emojiNames[] =
+    {"1f351.bmp",
+     "1f36a.bmp",
+     "1f419.bmp",
+     "1f438.bmp",
+     "1f440.bmp",
+     "1f47d.bmp",
+     "1f604.bmp",
+     "1f605.bmp",
+     "1f60c.bmp",
+     "1f60e.bmp",
+     "1f60f.bmp",
+     "1f614.bmp",
+     "1f616.bmp",
+     "1f61b.bmp",
+     "1f61c.bmp",
+     "1f621.bmp",
+     "1f622.bmp",
+     "1f624.bmp",
+     "1f62b.bmp",
+     "1f633.bmp",
+     "1f641.bmp",
+     "1f644.bmp",
+     "1f910.bmp",
+     "1f913.bmp",
+     "1f914.bmp",
+     "1f916.bmp",
+     "1f920.bmp",
+     "1f922.bmp",
+     "1f923.bmp",
+     "1f924.bmp",
+     "1f928.bmp",
+     "1f92a.bmp",
+     "1f970.bmp",
+     "1f971.bmp",
+     "1f972.bmp",
+     "1f975.bmp",
+     "1f976.bmp",
+     "1f97a.bmp",
+     "1f98b.bmp",
+     "1fae3.bmp",
+     "1fae4.bmp",
+     "1faea.bmp"}; // sz: 42 temp
+
+void clearTFT()
+{
+    // clear the TFT to prepare for use, also sets desired rotation
+    tft.setRotation(3);
+    tft.fillScreen(GC9A01A_BLACK);
+}
+
+void setTFTBrightness(float b)
+{
+    const uint8_t TFT_PIN = D0;
+    pinMode(TFT_PIN, OUTPUT); // OUTPUT or ANALOG?
+    // analogWriteResolution(TFT_PIN, 8);
+    // analogWriteFrequency(TFT_PIN, 100); // these were giving errors so lets leave em commented
+    analogWrite(TFT_PIN, (int)(255 * (b)));
+}
+
+void printDirectory(File32 dir, int depth = 0)
+{
+    while (true)
+    {
+        File32 entry = dir.openNextFile();
+        if (!entry)
+            break;
+        for (int i = 0; i < depth; i++)
+            debug("  ");
+        char namebuf[32] = "\0";
+        entry.getName(namebuf, 32);
+        debug(namebuf);
+        if (entry.isDirectory())
+        {
+            debugln("/");
+            printDirectory(entry, depth + 1);
+        }
+        else
+        {
+            debug("  ");
+            debugln(entry.size());
+        }
+        entry.close();
+    }
+}
+
+void do_heartbeat(void *pv)
+{
+    pinMode(21, OUTPUT);
+    while (1)
+    {
+        digitalWrite(21, millis() % 1000 > 500);
+        vTaskDelay((1000 / 10) / portTICK_PERIOD_MS);
+    }
+    vTaskDelete(NULL);
+}
+
+void print_binary16ln(uint16_t n, char var = ' ')
+{
+    Serial.print(var);
+    Serial.print(" ");
+    for (int i = 15; i >= 0; i--)
+    {
+        Serial.print((n >> i) & 0b1);
+        if (i == 8)
+        {
+            Serial.print(" ");
+        }
+    }
+    Serial.println();
+}
+
+void rawReadTest()
+{
+    SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE1));
+    digitalWrite(ADXL_CS, LOW);
+
+    SPI.transfer(0x00 | 0x80);           // register 0x00, read bit set
+    uint8_t result = SPI.transfer(0x00); // clock in the response
+
+    digitalWrite(ADXL_CS, HIGH);
+    SPI.endTransaction();
+
+    Serial.printf("device ID: 0x%02X (expect 0xE5)\n", result);
+    Serial.flush();
+}
+
+uint8_t readRegister(uint8_t reg)
+{
+    uint8_t buffer[1] = {reg | 0x80};
+    SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
+    digitalWrite(ADXL_CS, LOW);
+    SPI.transfer(buffer, 1); // 1 byte
+    digitalWrite(ADXL_CS, HIGH);
+    SPI.endTransaction();
+
+    return buffer[0];
+}
+
+void writeRegister(uint8_t reg, uint8_t value)
+{
+    uint8_t buffer[2] = {reg, value};
+    SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
+    digitalWrite(ADXL_CS, LOW);
+    SPI.transfer(buffer, 2);
+    digitalWrite(ADXL_CS, HIGH);
+    SPI.endTransaction();
+}
+
+void do_adxl(void *pv)
+{
+    static bool printOnNextMutexFail = true;
+    pinMode(ADXL_CS, OUTPUT);
+    delayMicroseconds(3);
+
+    writeRegister(0x31, 0b00101101);       // data: 4wire, fullres 4mg/lsb, leftjust, 4g range
+    writeRegister(0x2D, 0x08);             // power on
+    uint8_t deviceID = readRegister(0x00); // get devid
+
+    while (!(deviceID == 0xE5))
+    {
+        debugln("accel begin failed, trying again shortly");
+        vTaskDelay((100) / portTICK_PERIOD_MS);
+        deviceID = readRegister(0x00); // get devid
+    }
+    debugln("accel seem gud");
+
+    writeRegister(0x2C, 0b1010); // set to 100Hz
+
+    while (1)
+    {
+        /* Get a new sensor event */
+        if (xSemaphoreTake(SPIbustransactionMutex, (TickType_t)5) == pdTRUE)
+        {
+            // fucking dogshit adafruit library. no offense ada
+
+            uint16_t x, y, z;
+
+            uint8_t buf[7] = {0};
+            buf[0] = 0x32 | 0x80 | 0x40; // DATAX0, read, multi-byte
+
+            SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
+            digitalWrite(ADXL_CS, LOW);
+            SPI.transfer(buf, 7); // address + 6 data bytes, CS never released
+            digitalWrite(ADXL_CS, HIGH);
+            SPI.endTransaction();
+
+            x = (int16_t)((buf[2] << 8) | buf[1]);
+            y = (int16_t)((buf[4] << 8) | buf[3]);
+            z = (int16_t)((buf[6] << 8) | buf[5]);
+
+            xSemaphoreGive(SPIbustransactionMutex);
+            Serial.println("BEGIN DUMP:");
+            // print_binary16ln(x, 'x');
+            // print_binary16ln(y, 'y');
+            // print_binary16ln(z, 'z');
+
+            // at 4 milli-geez per lesbian, twos complement style
+            // something something 2s complement bullshitterino
+            x = x >> 5;
+            if (x & (1 << 10))
+            {
+                x ^= (1 << 15);
+                x ^= (1 << 14);
+                x ^= (1 << 13);
+                x ^= (1 << 12);
+                x ^= (1 << 11);
+            }
+            y = y >> 5;
+            if (y & (1 << 10))
+            {
+                y ^= (1 << 15);
+                y ^= (1 << 14);
+                y ^= (1 << 13);
+                y ^= (1 << 12);
+                y ^= (1 << 11);
+            }
+            z = z >> 5;
+            if (z & (1 << 10))
+            {
+                z ^= (1 << 15);
+                z ^= (1 << 14);
+                z ^= (1 << 13);
+                z ^= (1 << 12);
+                z ^= (1 << 11);
+            }
+            int16_t xcounts = ((int16_t)x);
+            int16_t ycounts = ((int16_t)y);
+            int16_t zcounts = ((int16_t)z);
+            float x_ms2 = 4.0 * xcounts / 1000.0 * 9.81;
+            float y_ms2 = 4.0 * ycounts / 1000.0 * 9.81;
+            float z_ms2 = 4.0 * zcounts / 1000.0 * 9.81;
+            Serial.printf("X: %f, Y: %f, Z: %f\n", x_ms2, y_ms2, z_ms2);
+
+            printOnNextMutexFail = true;
+        }
+        else
+        {
+            if (printOnNextMutexFail)
+            {
+                debugln("no semmy four :((((");
+                printOnNextMutexFail = false;
+            }
+        }
+        vTaskDelay((1000 / 50) / portTICK_PERIOD_MS);
+    }
+
+    vTaskDelete(NULL);
+}
+
+void setup()
+{
+
+    Serial.begin(115200);
+
+    delay(2000);
+
+    SPI.begin(XIAO_SCK, XIAO_MISO, XIAO_MOSI);
+    debugln("GC9A01A Test!");
+
+    tft.begin(25000000); // confirmed to work at up to 25MHz, sometimes up to 40MHz
+    //  digitalWrite(TFT_RST, LOW);
+    //  delay(500);
+    //  digitalWrite(TFT_RST, HIGH);
+
+    clearTFT();
+
+    delay(100);
+    SdSpiConfig sdConfig(SD_CS, SHARED_SPI, SD_SCK_MHZ(25), &SPI);
+    bool success = SD.begin(sdConfig);
+    delay(100);
+
+    if (!success)
+    {
+        debugln("SD card is fucked");
+        while (1)
+            ;
+    }
+
+    File32 root = SD.open("/");
+    if (!root)
+    {
+        debugln("Failed to open root directory!");
+    }
+    printDirectory(root);
+    root.close();
+
+    delay(2000);
+
+    // requried whether using adxl 345 or not
+    SPIbustransactionMutex = xSemaphoreCreateMutex();
+    // have to do this AFTER making a spi mutex. duh,
+    xTaskCreate(do_adxl, "ADXL34X Function", 8192, NULL, 2, NULL);
+    delay(500);
+    setTFTBrightness(0.5);
+
+    xTaskCreate(do_heartbeat, "LED heartbeat", 1024, NULL, 1, NULL);
+}
+
+void loop(void)
+{
+    static char currentFile[32];
+    for (int x = 0; x < 42; x++)
+    {
+        strcpy(currentFile, emojiNames[x]);
+         if (xSemaphoreTake(SPIbustransactionMutex, (TickType_t)25) == pdTRUE)
+        {
+        
+           //debugln("entering sigma grindset");
+           reader.drawBMP(currentFile, tft, 0, 0, true);
+           delay(10); // for SD card to finish shitting its pants
+           xSemaphoreGive(SPIbustransactionMutex);
+         }
+         else
+        {
+           //debugln("no semmy (from main loop)");
+         }
+        vTaskDelay(250 / portTICK_PERIOD_MS);
+    }
+}

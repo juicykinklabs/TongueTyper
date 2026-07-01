@@ -1,0 +1,230 @@
+#include <Arduino.h>
+
+#include "app_conf.h"
+#include "hardware_conf.h"
+
+#include "ADXL343.h"
+
+#include "Audio.h"
+#include "SPI.h"
+#include "SD.h"
+#include "FS.h"
+
+#include "SdFat_Adafruit_Fork.h"
+#include "Adafruit_ImageReader.h"
+#include "Adafruit_GC9A01A.h"
+#include "Adafruit_GFX.h"
+
+#include "FreeMono18pt7b.h"
+#include "FreeMonoBold24pt7b.h"
+
+SdFat32 SD_as_f32;
+SdSpiConfig sdConfig(SD_CS, SHARED_SPI, SD_SCK_MHZ(25), &SPI); // just for the imageReader
+Adafruit_GC9A01A tft(&SPI, TFT_DC, TFT_CS);
+Adafruit_ImageReader reader(SD_as_f32);
+
+ADXL343 accel(ADXL_CS, XIAO_SCK, XIAO_MISO, XIAO_MOSI);
+Audio audio;
+
+SemaphoreHandle_t metaSPIbustransactionMutex = NULL;
+
+void setTFTBrightness(float b)
+{
+    const uint8_t TFT_BACKLIGHT_PIN = D0;
+    pinMode(TFT_BACKLIGHT_PIN, OUTPUT); // OUTPUT or ANALOG?
+    // analogWriteResolution(TFT_BACKLIGHT_PIN, 8);
+    // analogWriteFrequency(TFT_BACKLIGHT_PIN, 100); // these were giving errors so lets leave em commented
+    analogWrite(TFT_BACKLIGHT_PIN, (int)(255 * (b)));
+}
+
+void my_audio_info(Audio::msg_t m)
+{
+    //Serial.printf("%s: %s\n", m.s, m.msg);
+}
+
+void do_heartbeat(void *pv)
+{
+    pinMode(21, OUTPUT);
+    while (1)
+    {
+        digitalWrite(21, millis() % 1000 > 500);
+        vTaskDelay((1000 / 10) / portTICK_PERIOD_MS);
+    }
+    vTaskDelete(NULL);
+}
+
+// void printDirectory(File32 dir, int depth = 0)
+//{
+//     while (true)
+//     {
+//         File32 entry = dir.openNextFile();
+//         if (!entry)
+//             break;
+//         for (int i = 0; i < depth; i++)
+//             debug("  ");
+//         char namebuf[32] = "\0";
+//         entry.getName(namebuf, 32);
+//         debug(namebuf);
+//         if (entry.isDirectory())
+//         {
+//             debugln("/");
+//             printDirectory(entry, depth + 1);
+//         }
+//         else
+//         {
+//             debug("  ");
+//             debugln(entry.size());
+//         }
+//         entry.close();
+//     }
+// }
+
+bool metaTransaction_showImage(const char *filename, bool clear = false)
+{
+    //  digitalWrite(TFT_RST, LOW);
+    //  delay(500);
+    //  digitalWrite(TFT_RST, HIGH);
+
+    tft.begin(25000000);
+
+    if (clear)
+    {
+        tft.fillScreen(GC9A01A_BLACK);
+        return true;
+    }
+
+    tft.setRotation(3);
+
+    bool success = SD_as_f32.begin(sdConfig);
+    if (!success)
+    {
+        debugln("SD card is no bueno");
+    }
+    reader.drawBMP(filename, tft, 0, 0, true);
+    SD_as_f32.end();
+
+    return success;
+}
+
+bool metaTransaction_playSound(const char *filename)
+{
+    // assumptions
+    // sd_cs configured as output
+    // this is blocking, if we want to read user input while sound is still playing,
+    // we'll need a task
+    SPI.begin(XIAO_SCK, XIAO_MISO, XIAO_MOSI); // we probably need this
+    SPI.setFrequency(1000000); // might not need this
+    SD.begin(SD_CS);
+    bool success = audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+    if (!success)
+    {
+        debugln("I2s IO matrix config failed, probably");
+    }
+    audio.setVolume(18); // 0...21
+    uint32_t t_playStart = millis();
+    audio.connecttoFS(SD, filename);
+    uint32_t t_duration = (audio.getAudioFileDuration() * 1000 + 1000); // must round up
+    while (millis() - t_playStart < t_duration)
+    {
+        audio.loop();
+        vTaskDelay(1);
+    }
+    SD.end();
+
+    return success;
+}
+
+void adxl_earlySPIinit() {
+    bool success = accel.init(1000000);
+    if (!success) {
+        debugln("uhh you're not gonna like this! adxl fucked up :3");
+        delay(5000);
+    }
+    accel.setRange(ADXL343_RANGE_4_G);
+    accel.setRate(ADXL343_DATARATE_100_HZ);
+}
+
+void do_adxl(void *pv)
+{
+    static bool printOnNextMutexFail = true;   
+    while (1)
+    {
+        /* Get a new sensor event */
+        if (xSemaphoreTake(metaSPIbustransactionMutex, (TickType_t)10) == pdTRUE)
+        {
+            accel.dumpRegisters();
+            double x, y, z;
+            accel.getAcceleration(&x, &y, &z);
+
+            xSemaphoreGive(metaSPIbustransactionMutex);
+            
+            x *= 9.81; // convert to m/s^2
+            y *= 9.81; // convert to m/s^2
+            z *= 9.81; // convert to m/s^2
+            
+            debugf("X: %f, Y: %f, Z: %f\n", x, y, z);
+
+            printOnNextMutexFail = true;
+        }
+        else
+        {
+            if (printOnNextMutexFail)
+            {
+                debugln("adxl was blocked");
+                printOnNextMutexFail = false;
+            }
+        }
+        vTaskDelay((1000 / 50) / portTICK_PERIOD_MS);
+    }
+
+    vTaskDelete(NULL);
+}
+
+void setup()
+{
+    debugStart();
+
+    adxl_earlySPIinit();
+
+    xTaskCreate(do_heartbeat, "LED heartbeat", 1024, NULL, 1, NULL);
+
+    Audio::audio_info_callback = my_audio_info;
+
+    pinMode(SD_CS, OUTPUT);
+    digitalWrite(SD_CS, HIGH);
+
+    setTFTBrightness(0.35);
+
+    metaSPIbustransactionMutex = xSemaphoreCreateMutex();
+    // have to do this AFTER making a spi mutex. duh,
+    xTaskCreate(do_adxl, "ADXL34X Function", 8192, NULL, 2, NULL);
+}
+
+void loop()
+{
+    if (xSemaphoreTake(metaSPIbustransactionMutex, (TickType_t)25) == pdTRUE)
+    {
+
+        metaTransaction_showImage("1fae4.bmp");
+        //metaTransaction_playSound("fard.mp3");
+        xSemaphoreGive(metaSPIbustransactionMutex);
+    }
+    else
+    {
+        debugln("main loop was semaphore blocked for 25 ticks!!!");
+    }
+    vTaskDelay(750 / portTICK_PERIOD_MS);
+
+    if (xSemaphoreTake(metaSPIbustransactionMutex, (TickType_t)25) == pdTRUE)
+    {
+
+        metaTransaction_showImage("1f975.bmp");
+        //metaTransaction_playSound("quickfart.mp3");
+        xSemaphoreGive(metaSPIbustransactionMutex);
+    }
+    else
+    {
+        debugln("main loop was semaphore blocked for 25 ticks!!!");
+    }
+    vTaskDelay(750 / portTICK_PERIOD_MS);
+}

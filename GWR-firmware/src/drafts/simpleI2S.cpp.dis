@@ -1,0 +1,70 @@
+//#include <ESP_I2S.h>
+
+#include "Arduino.h"
+#include "Audio.h"
+#include "SPI.h"
+#include "SD.h"
+#include "FS.h"
+
+// noting power budget of 700 mA for all devices
+
+#define XIAO_SCK D8
+#define XIAO_MISO D9
+#define XIAO_MOSI D10
+
+#define I2S_BCLK   D0   // Bit clock
+#define I2S_LRC    D3   // Word select (LR clock)
+#define I2S_DOUT   D6   // Data out to DAC
+
+#define SD_CS D4
+
+Audio audio;
+
+void my_audio_info(Audio::msg_t m) {
+    Serial.printf("%s: %s\n", m.s, m.msg);
+}
+
+void setup() {
+    Audio::audio_info_callback = my_audio_info;
+    pinMode(SD_CS, OUTPUT);
+    digitalWrite(SD_CS, HIGH);
+    SPI.begin(XIAO_SCK, XIAO_MISO, XIAO_MOSI);
+    SPI.setFrequency(1000000);
+    Serial.begin(115200);
+    SD.begin(SD_CS);
+    audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+    audio.setVolume(18); // 0...21
+}
+
+void loop(){
+    static uint32_t t_playStart;
+    static uint32_t t_duration;
+    
+    t_playStart = millis();
+    audio.connecttoFS(SD, "quickfart.mp3");
+    t_duration = (audio.getAudioFileDuration() * 1000 + 1500);
+    while(millis() - t_playStart < t_duration) {
+        audio.loop();
+        vTaskDelay(1);
+    }
+    
+    t_playStart = millis();
+    vTaskDelay(100);
+    audio.connecttoFS(SD, "fard.mp3");
+    t_duration = (audio.getAudioFileDuration() * 1000 + 1500);
+    while(millis() - t_playStart < t_duration) {
+        audio.loop();
+        vTaskDelay(1);
+    }
+
+    t_playStart = millis();
+    vTaskDelay(100);
+    audio.connecttoFS(SD, "reverbfart.mp3");
+    t_duration = (audio.getAudioFileDuration() * 1000 + 1500);
+    while(millis() - t_playStart < t_duration) {
+        audio.loop();
+        vTaskDelay(1);
+    }
+    vTaskDelay(100);
+    
+}
