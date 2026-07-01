@@ -1,363 +1,205 @@
-#include "SPI.h"
+#include <Arduino.h>
+#include <SPI.h>
 
-#include "Adafruit_GFX.h"
-#include "Adafruit_GC9A01A.h"
+#include "app_conf.h"
+#include "hardware_conf.h"
+
+#include "ADXL343.h"
+
+#include "Audio.h"
+#include "SD.h"
+#include "FS.h"
+
 #include "SdFat_Adafruit_Fork.h"
 #include "Adafruit_ImageReader.h"
+#include "Adafruit_GC9A01A.h"
+#include "Adafruit_GFX.h"
 
 #include "FreeMono18pt7b.h"
 #include "FreeMonoBold24pt7b.h"
 
-#define TFT_DC D1
-#define TFT_CS D2
-#define TFT_RST D3
+SdFat32 SD_as_f32;
+SdSpiConfig sdConfig(SD_CS, SHARED_SPI, SD_SCK_MHZ(25), &SPI); // just for the imageReader
+Adafruit_GC9A01A tft(&SPI, TFT_DC, TFT_CS);
+Adafruit_ImageReader reader(SD_as_f32);
 
-#define XIAO_SCK D8
-#define XIAO_MISO D9
-#define XIAO_MOSI D10
+ADXL343 accel(ADXL_CS, XIAO_SCK, XIAO_MISO, XIAO_MOSI);
+Audio audio;
 
-#define SD_CS D4
+SemaphoreHandle_t metaSPIbustransactionMutex = NULL;
 
-#define BUTTON1 D5
-#define BUTTON2 D6
-#define BUTTON3 D7
-
-SdFat32 SD;
-Adafruit_GC9A01A tft(TFT_CS, TFT_DC); // not using hardware reset because it wasn't working WITH it
-Adafruit_ImageReader reader(SD);
-
-// ### GLOBAL STATE VARIABLES ###
-
-volatile uint32_t buttonSequence = 0b0; // need semaphore :3
-
-// temporary emoji filenames
-const char *emojiNames[] =
-    {"1f351.bmp",
-     "1f36a.bmp",
-     "1f419.bmp",
-     "1f438.bmp",
-     "1f440.bmp",
-     "1f47d.bmp",
-     "1f604.bmp",
-     "1f605.bmp",
-     "1f60c.bmp",
-     "1f60e.bmp",
-     "1f60f.bmp",
-     "1f614.bmp",
-     "1f616.bmp",
-     "1f61b.bmp",
-     "1f61c.bmp",
-     "1f621.bmp",
-     "1f622.bmp",
-     "1f624.bmp",
-     "1f62b.bmp",
-     "1f633.bmp",
-     "1f641.bmp",
-     "1f644.bmp",
-     "1f910.bmp",
-     "1f913.bmp",
-     "1f914.bmp",
-     "1f916.bmp",
-     "1f920.bmp",
-     "1f922.bmp",
-     "1f923.bmp",
-     "1f924.bmp",
-     "1f928.bmp",
-     "1f92a.bmp",
-     "1f970.bmp",
-     "1f971.bmp",
-     "1f972.bmp",
-     "1f975.bmp",
-     "1f976.bmp",
-     "1f97a.bmp",
-     "1f98b.bmp",
-     "1fae3.bmp",
-     "1fae4.bmp",
-     "1faea.bmp"}; // sz: 42 temp
-
-void clearTFT()
+void my_audio_info(Audio::msg_t m)
 {
-  // clear the TFT to prepare for use, also sets desired rotation
-  tft.setRotation(3);
-  tft.fillScreen(GC9A01A_BLACK);
+    //Serial.printf("%s: %s\n", m.s, m.msg);
 }
 
-void setTFTBrightness(float b)
+void do_heartbeat(void *pv)
 {
-  const uint8_t TFT_PIN = D0;
-  pinMode(TFT_PIN, OUTPUT); // OUTPUT or ANALOG?
-  // analogWriteResolution(TFT_PIN, 8);
-  // analogWriteFrequency(TFT_PIN, 100); // these were giving errors so lets leave em commented
-  analogWrite(TFT_PIN, (int)(255 * (b)));
+    pinMode(LED_BUILTIN, OUTPUT);
+    while (1)
+    {
+        digitalWrite(LED_BUILTIN, millis() % 1000 > 500);
+        vTaskDelay((1000 / 10) / portTICK_PERIOD_MS);
+    }
+    vTaskDelete(NULL);
 }
 
-void printDirectory(File32 dir, int depth = 0)
+bool metaTransaction_showImage(const char *filename, bool clear = false)
 {
-  while (true)
-  {
-    File32 entry = dir.openNextFile();
-    if (!entry)
-      break;
-    for (int i = 0; i < depth; i++)
-      Serial.print("  ");
-    char namebuf[32] = "\0";
-    entry.getName(namebuf, 32);
-    Serial.print(namebuf);
-    if (entry.isDirectory())
+    //  digitalWrite(TFT_RST, LOW);
+    //  delay(500);
+    //  digitalWrite(TFT_RST, HIGH);
+
+    tft.begin(40000000); // try 25 also
+
+    if (clear)
     {
-      Serial.println("/");
-      printDirectory(entry, depth + 1);
+        tft.fillScreen(GC9A01A_BLACK);
+        return true;
     }
-    else
+
+    tft.setRotation(3);
+
+    bool success = SD_as_f32.begin(sdConfig);
+    if (!success)
     {
-      Serial.print("  ");
-      Serial.println(entry.size());
+        debugln("SD card is no bueno");
     }
-    entry.close();
-  }
+    reader.drawBMP(filename, tft, 0, 0, true);
+    SD_as_f32.end();
+
+    return success;
 }
 
-void demoBigTextDisplay()
+bool metaTransaction_playSound(const char *filename)
 {
-  tft.fillScreen(GC9A01A_WHITE);
-  tft.setTextColor(GC9A01A_BLACK);
+    // assumptions
+    // sd_cs configured as output
+    // this is blocking, if we want to read user input while sound is still playing,
+    // we'll need a task
+    SPI.end(); // broken without?
+    SPI.begin(XIAO_SCK, XIAO_MISO, XIAO_MOSI); // we probably need this
+    SPI.setFrequency(1000000); // might not need this
+    SD.begin(SD_CS);
 
-  int16_t x1, y1;
-  uint16_t w, h;
-  int16_t centeredX, centeredY;
-
-  static char cString[2] = "_";
-
-  static char subLine1[10] = "         "; // 9 chars + nt
-  static char subLine2[8] = "       ";    // 7 chars + nt
-  static char demoText[] = "ABC123 THIS IS A DEMONSTRATION OF THE GWR SYSTEM. :D THIS IS ONLY A TEST!~~";
-  int16_t y_offset_big = -38;     // negative for up, positive for down
-  int16_t y_offset_subtitle = 62; // negative for up, positive for down
-
-  for (int i = 0; i < strlen(demoText); i++)
-  {
-    char c = demoText[i];
-    uint32_t t_start = millis(); // for timing synchronization
-
-    cString[0] = c;
-
-    tft.setTextSize(5); // matters for this call!
-    tft.setFont(&FreeMonoBold24pt7b);
-
-    tft.getTextBounds(cString, 0, 0, &x1, &y1, &w, &h);
-
-    // draw a character centered with border
-    tft.fillScreen(GC9A01A_WHITE);
-
-    tft.fillCircle(120, 120 + y_offset_big, 80, GC9A01A_BLUE);
-    tft.fillCircle(120, 120 + y_offset_big, 76, GC9A01A_WHITE);
-
-    centeredX = tft.width() / 2 - (x1 + w / 2);
-    centeredY = y_offset_big + tft.height() / 2 - (y1 + h / 2);
-
-    tft.setCursor(centeredX, centeredY);
-
-    tft.print(cString);
-
-    // place a string at the bottom
-
-    tft.setTextSize(1); // matters for this call!
-    tft.setFont(&FreeMono18pt7b);
-
-    tft.getTextBounds(subLine1, 0, 0, &x1, &y1, &w, &h);
-    centeredX = tft.width() / 2 - (x1 + w / 2);
-    centeredY = y_offset_subtitle + tft.height() / 2 - (y1 + h / 2);
-    tft.setCursor(centeredX, centeredY);
-    tft.print(subLine1);
-
-    tft.getTextBounds(subLine2, 0, 0, &x1, &y1, &w, &h);
-    centeredX = tft.width() / 2 - (x1 + w / 2);
-    centeredY = y_offset_subtitle + (h + 2) + tft.height() / 2 - (y1 + h / 2); // add additional line (h+2)
-    tft.setCursor(centeredX, centeredY);
-    tft.print(subLine2);
-
-    // rotate subtitle
-    for (int i = 0; i < strlen(subLine1) - 1; i++)
+    audio.setVolume(18); // 0...21
+    uint32_t t_playStart = millis();
+    audio.connecttoFS(SD, filename);
+    uint32_t t_duration = (audio.getAudioFileDuration() * 1000 + 1000); // must round up
+    //audio.isRunning();
+    while (millis() - t_playStart < t_duration)
     {
-      subLine1[i] = subLine1[i + 1];
+        audio.loop();
+        vTaskDelay(1);
     }
-    subLine1[strlen(subLine1) - 1] = subLine2[0];
-    for (int i = 0; i < strlen(subLine2) - 1; i++)
-    {
-      subLine2[i] = subLine2[i + 1];
-    }
-    subLine2[strlen(subLine2) - 1] = c;
+    SD.end();
 
-    while ((millis() - t_start) < 750)
-    {
-      delay(1);
-    }
-  }
+    return true;
 }
 
-void inputHandler(void *pv)
+void do_adxl(void *pv)
 {
-  // static uint32_t t_start = millis();
-  // static uint32_t t_completed = 0;
-  static uint32_t t_lastinteraction = 0;
-  static int32_t internalState = -1;
-  static const uint32_t BUTTON_TIMEOUT = 5000; // ms
-  static const uint32_t BUTTON_DEBOUNCE = 100; // ms
-  static const uint32_t INTRA_CMD_DELAY = 500;
-  static boolean button_released = true;
+    static bool printOnNextMutexFail = true;
+    
+    if (xSemaphoreTake(metaSPIbustransactionMutex, (TickType_t)10) == pdTRUE) {
 
-  // -1: waiting for first button press or for button sequence to clear by consumer
-  // 1-6: a button was pressed recently enough that a second press should update global buttonSequence
-
-  while (1)
-  {
-    if (digitalRead(BUTTON1) && digitalRead(BUTTON2) && digitalRead(BUTTON3))
-      {
-        button_released = true; // all buttons up, allow next valid pass to update state
-      }
-
-    if (button_released && (internalState == -1) && (buttonSequence == 0))
-    {
-      // in the actual code this would be handled by an interrupt from the gpio expander
-      // need debouncing too
-      if (!digitalRead(BUTTON1))
-      {
-        internalState = 1;
-        button_released = false;
-        t_lastinteraction = millis();
-      }
-      if (!digitalRead(BUTTON2))
-      {
-        internalState = 2;
-        button_released = false;
-        t_lastinteraction = millis();
-      }
-      if (!digitalRead(BUTTON3))
-      {
-        internalState = 3;
-        button_released = false;
-        t_lastinteraction = millis();
-      }
-    }
-    else
-    {
-      // button was pressed, but how recently?
-      if (millis() - t_lastinteraction > BUTTON_TIMEOUT)
-      {
-        internalState = -1;
-        Serial.println("took too long, internalstate=-1");
-      }
-      else if (millis() - t_lastinteraction > BUTTON_DEBOUNCE)
-      {
-        if (digitalRead(BUTTON1) && digitalRead(BUTTON2) && digitalRead(BUTTON3))
-        {
-          button_released = true; // all buttons up, allow next valid pass to update state
-          Serial.println("awaiting secondary button press...");
+        bool success = accel.init();
+        while (!success) {
+            debugln("uhh you're not gonna like this! adxl fucked up :3");
+            Serial.flush();
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+            success = accel.init();
         }
-        if (button_released)
-        {
-          // todo: use an array of buttons and loop over them
-          if (!digitalRead(BUTTON1))
-          {
-            buttonSequence = 10 * internalState + 1;
-            t_lastinteraction = millis();
-            internalState = -1;
-            button_released = false;
-          }
-          if (!digitalRead(BUTTON2))
-          {
-            buttonSequence = 10 * internalState + 2;
-            t_lastinteraction = millis();
-            internalState = -1;
-            button_released = false;
-          }
-          if (!digitalRead(BUTTON3))
-          {
-            buttonSequence = 10 * internalState + 3;
-            t_lastinteraction = millis();
-            internalState = -1;
-            button_released = false;
-          }
+    
+        accel.setRange(ADXL343_RANGE_4_G);
+        accel.setRate(ADXL343_DATARATE_100_HZ);
 
-          delay(100);
-        }
-      }
+        xSemaphoreGive(metaSPIbustransactionMutex);
     }
 
-    vTaskDelay((1000 / 20) / portTICK_PERIOD_MS); // run at 20 Hz
-  }
-
-  vTaskDelete(NULL);
-}
-
-void buttonSequenceConsumer(void *pv)
-{
-
-  while (1)
-  {
-    if (buttonSequence > 0)
+    while (1)
     {
-      Serial.print("oh hey: ");
-      Serial.println(buttonSequence);
-      buttonSequence = 0;
+        if (xSemaphoreTake(metaSPIbustransactionMutex, (TickType_t)10) == pdTRUE)
+        {
+            double x, y, z, x0, y0, z0;
+            accel.getAcceleration3V3(&x, &y, &z);
+            accel.getAcceleration(&x0, &y0, &z0);
+            x *= 9.81; // convert to m/s^2
+            y *= 9.81; // convert to m/s^2
+            z *= 9.81; // convert to m/s^2
+            x0 *= 9.81; // convert to m/s^2
+            y0 *= 9.81; // convert to m/s^2
+            z0 *= 9.81; // convert to m/s^2
+            debugf("X: %f, Y: %f, Z: %f, X0: %f, Y0: %f, Z0: %f\n", x, y, z, x0, y0, z0);
+            
+            xSemaphoreGive(metaSPIbustransactionMutex);
+            printOnNextMutexFail = true;
+        }
+        else
+        {
+            if (printOnNextMutexFail)
+            {
+                debugln("adxl was blocked");
+                printOnNextMutexFail = false;
+            }
+        }
+        vTaskDelay((1000 / 100) / portTICK_PERIOD_MS);
     }
-    vTaskDelay((1000 / 20) / portTICK_PERIOD_MS); // run at 20 Hz
-  }
-  vTaskDelete(NULL);
+
+    vTaskDelete(NULL);
 }
 
 void setup()
 {
-  Serial.begin(115200);
+    debugStart();
 
-  delay(1000);
-  Serial.println("GC9A01A Test!");
-  pinMode(BUTTON1, INPUT_PULLUP);
-  pinMode(BUTTON2, INPUT_PULLUP);
-  pinMode(BUTTON3, INPUT_PULLUP);
+    xTaskCreate(do_heartbeat, "LED heartbeat", 1024, NULL, 1, NULL);
 
-  tft.begin(40000000); // confirmed to work at up to 25MHz, sometimes up to 40MHz
-  // digitalWrite(TFT_RST, LOW);
-  // delay(500);
-  // digitalWrite(TFT_RST, HIGH);
+    Audio::audio_info_callback = my_audio_info;
 
-  clearTFT();
+    pinMode(SD_CS, OUTPUT);
+    digitalWrite(SD_CS, HIGH);
 
-  delay(100);
-  SdSpiConfig sdConfig(SD_CS, SHARED_SPI, SD_SCK_MHZ(25), &SPI);
-  bool success = SD.begin(sdConfig);
-  delay(100);
+    bool success = audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+    if (!success)
+    {
+        debugln("I2s IO matrix config failed, probably");
+        delay(15000);
+    }
 
-  if (!success)
-  {
-    Serial.println("SD card is fucked");
-  }
+    //setTFTBrightness(0.35);
 
-  File32 root = SD.open("/");
-  if (!root)
-  {
-    Serial.println("Failed to open root directory!");
-  }
-  printDirectory(root);
-  root.close();
-
-  xTaskCreate(inputHandler, "Button Input Handler", 4096, NULL, 5, NULL);
-  xTaskCreate(buttonSequenceConsumer, "Thing that uses buttons", 4096, NULL, 4, NULL);
-
-  delay(500);
+    metaSPIbustransactionMutex = xSemaphoreCreateMutex();
+    // have to do this AFTER making a spi mutex. duh,
+    xTaskCreate(do_adxl, "ADXL34X Function", 8192, NULL, 2, NULL);
 }
 
-void loop(void)
+void loop()
 {
 
-  delay(1000);
-  setTFTBrightness(0.5);
-  // todo: make customizable borders with circles. eg trans flag?
-  char currentFile[10];
-  for (int x = 0; x < 42; x++)
-  {
-    strcpy(currentFile, emojiNames[x]);
-    reader.drawBMP(currentFile, tft, 0, 0, true);
-    vTaskDelay(250 / portTICK_PERIOD_MS);
-  }
+    //if (xSemaphoreTake(metaSPIbustransactionMutex, (TickType_t)25) == pdTRUE)
+    //{
+//
+    //    metaTransaction_showImage("1fae4.bmp");
+    //    metaTransaction_playSound("fard.mp3");
+    //    xSemaphoreGive(metaSPIbustransactionMutex);
+    //}
+    //else
+    //{
+    //    debugln("main loop was semaphore blocked for 25 ticks!!!");
+    //}
+    //vTaskDelay(500 / portTICK_PERIOD_MS);
+//
+    //if (xSemaphoreTake(metaSPIbustransactionMutex, (TickType_t)25) == pdTRUE)
+    //{
+//
+    //    metaTransaction_showImage("1f975.bmp");
+    //    metaTransaction_playSound("quickfart.mp3");
+    //    xSemaphoreGive(metaSPIbustransactionMutex);
+    //}
+    //else
+    //{
+    //    debugln("main loop was semaphore blocked for 25 ticks!!!");
+    //}
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
 }
