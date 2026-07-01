@@ -1,5 +1,7 @@
 # GagWriter Remastered
 
+## Public-facing Product Name: TongueTyper
+
 A reinvented talking-gag-dildotyper platform with WiFi control, USB output, accelerometer, speaker, and haptic feedback.
 
 ## Directory
@@ -8,7 +10,7 @@ A reinvented talking-gag-dildotyper platform with WiFi control, USB output, acce
  - GWR-pcb: printed circuit board design files (KiCAD)
  - SD-Media: SD Card files and helper scripts
     - Additional emojis can be found: https://www.emojiall.com/en/image-emoji-platform/apple/hd
- - [todo]: 3D models directory for step/stl
+ - GWR-Models: 3D printable and silicone parts
 
 ## Footer
 
