@@ -1,0 +1,5 @@
+Capsule-Daughterboards-backups/*
+*.lck
+.history
+*.step
+fp-lib-table
