@@ -1,0 +1,32 @@
+{
+  "ADXL": {
+    "NTSPX": 0,
+    "NTSPY": 0,
+    "NTSPZ": 265
+  },
+  "WiFi": {
+    "Enabled": true,
+    "SSID": "myAccessPoint",
+    "PSWD": "myPassword"
+  },
+  "TongueTyper": {
+    "Display": {
+        "Brightness": 0.5,
+        "Font": "default",
+        "InvertColors": false
+    },
+    "SoundFX": {
+        "Announce": false,
+        "Lang": "en",
+        "Volume": 0.95
+    },
+    "Haptics": {
+        "Enabled": true,
+        "Strength": 0.8,
+        "Pattern": 2
+    }
+  },
+  "HID" :{
+    "MouseSensitivity" : 1200
+  }
+}
