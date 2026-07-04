@@ -6872,6 +6872,12 @@
 		(uuid "fd776b22-ce32-4baf-b4c3-2a29b5b622e6")
 	)
 	(junction
+		(at 111.76 201.93)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "08e5af41-59aa-4909-a550-f6b17df2a1ea")
+	)
+	(junction
 		(at 46.99 193.04)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -6984,6 +6990,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "adfe103d-a6ad-4d41-87c1-a7a86b1eac0f")
+	)
+	(junction
+		(at 111.76 182.88)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "cd020968-39a3-48ff-b99c-b39805713e61")
 	)
 	(junction
 		(at 309.88 191.77)
@@ -7241,6 +7253,16 @@
 	)
 	(wire
 		(pts
+			(xy 111.76 182.88) (xy 121.92 182.88)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "21f79e1c-e9b0-42ae-8eca-72edccfca67e")
+	)
+	(wire
+		(pts
 			(xy 212.09 125.73) (xy 213.36 125.73)
 		)
 		(stroke
@@ -7341,13 +7363,23 @@
 	)
 	(wire
 		(pts
-			(xy 86.36 201.93) (xy 104.14 201.93)
+			(xy 86.36 201.93) (xy 111.76 201.93)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "3186774c-803d-4008-b4c2-b0f77cd2a305")
+	)
+	(wire
+		(pts
+			(xy 111.76 182.88) (xy 111.76 190.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "31f0579e-3825-4780-a95b-e7d853a02171")
 	)
 	(wire
 		(pts
@@ -7961,6 +7993,16 @@
 	)
 	(wire
 		(pts
+			(xy 111.76 201.93) (xy 121.92 201.93)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9e6e143b-2750-4ac2-babe-b677d5bd747f")
+	)
+	(wire
+		(pts
 			(xy 340.36 77.47) (xy 341.63 77.47)
 		)
 		(stroke
@@ -8018,6 +8060,16 @@
 			(type default)
 		)
 		(uuid "aa632fc8-d44d-4fb4-b656-52065ab677c4")
+	)
+	(wire
+		(pts
+			(xy 111.76 198.12) (xy 111.76 201.93)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ab322690-f52d-4c39-b235-3153fb7bc079")
 	)
 	(wire
 		(pts
@@ -8141,7 +8193,7 @@
 	)
 	(wire
 		(pts
-			(xy 86.36 182.88) (xy 104.14 182.88)
+			(xy 86.36 182.88) (xy 111.76 182.88)
 		)
 		(stroke
 			(width 0)
@@ -8151,7 +8203,7 @@
 	)
 	(wire
 		(pts
-			(xy 104.14 182.88) (xy 104.14 190.5)
+			(xy 121.92 182.88) (xy 121.92 190.5)
 		)
 		(stroke
 			(width 0)
@@ -8271,7 +8323,7 @@
 	)
 	(wire
 		(pts
-			(xy 104.14 198.12) (xy 104.14 201.93)
+			(xy 121.92 198.12) (xy 121.92 201.93)
 		)
 		(stroke
 			(width 0)
@@ -13743,6 +13795,87 @@
 	)
 	(symbol
 		(lib_id "Device:C")
+		(at 111.76 194.31 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "a93276be-1aa6-4dd2-abb4-48d8b1bdcb9b")
+		(property "Reference" "C10"
+			(at 115.316 192.786 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "TBD"
+			(at 115.316 195.326 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 112.7252 198.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 111.76 194.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 111.76 194.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "961c9822-4b96-4de7-bd2d-102f231867bc")
+		)
+		(pin "2"
+			(uuid "7dce8c07-e322-4c49-9d3a-235ca29dde65")
+		)
+		(instances
+			(project "GWR-pcb"
+				(path "/45165c3b-8e6b-4141-b243-555b44fd49a6"
+					(reference "C10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
 		(at 59.69 186.69 0)
 		(unit 1)
 		(body_style 1)
@@ -15389,7 +15522,7 @@
 	)
 	(symbol
 		(lib_id "PCM_Diode_AKL:S1A")
-		(at 104.14 194.31 90)
+		(at 121.92 194.31 90)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -15400,7 +15533,7 @@
 		(fields_autoplaced yes)
 		(uuid "dd861c3e-33fe-4ac4-8d08-f40209a833c3")
 		(property "Reference" "D1"
-			(at 106.68 193.0399 90)
+			(at 124.46 193.0399 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -15411,7 +15544,7 @@
 			)
 		)
 		(property "Value" "S1A"
-			(at 106.68 195.5799 90)
+			(at 124.46 195.5799 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -15422,7 +15555,7 @@
 			)
 		)
 		(property "Footprint" "PCM_Diode_SMD_AKL:D_SMA"
-			(at 104.14 194.31 0)
+			(at 121.92 194.31 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15433,7 +15566,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.tme.eu/Document/f79bd540b2075b703f85044ae73d5af4/s1ab-s1mb.pdf"
-			(at 104.14 194.31 0)
+			(at 121.92 194.31 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15444,7 +15577,7 @@
 			)
 		)
 		(property "Description" "SMA Diode, Rectifier, 50V, 1A, Alternate KiCad Library"
-			(at 104.14 194.31 0)
+			(at 121.92 194.31 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)

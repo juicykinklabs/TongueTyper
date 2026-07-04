@@ -2,3 +2,4 @@ GWR-pcb-backups/*
 *.lck
 .history
 *.step
+fabrication_outputs/*
