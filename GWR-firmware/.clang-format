@@ -7,3 +7,6 @@ AlignConsecutiveMacros: true
 SortIncludes: false
 SpaceAfterCStyleCast: true
 SpaceBeforeAssignmentOperators: true
+NamespaceIndentation: All
+AlignArrayOfStructures: Left
+IndentCaseLabels: true
