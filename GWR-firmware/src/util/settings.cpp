@@ -5,32 +5,33 @@
 #include <ArduinoJson.h>
 
 #include "config/app_conf.h"
+#include "config/constants.h"
 
 bool writeSettingsConfig(const SettingsConfig &sc) {
     SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
     // todo check if begin was ok
-    SD.remove("/sys/setting.json"); // todo make configurable or defined
+    SD.remove(FSPATH::Settings);
     JsonDocument doc;
 
-    File file = SD.open("/sys/setting.json", FILE_WRITE);
+    File file = SD.open(FSPATH::Settings, FILE_WRITE);
     // todo check if file is ok
 
-    doc["ADXL"]["NTSPX"]                          = sc.adxl.ntsp_xmeas;
-    doc["ADXL"]["NTSPY"]                          = sc.adxl.ntsp_ymeas;
-    doc["ADXL"]["NTSPZ"]                          = sc.adxl.ntsp_zmeas;
-    doc["WiFi"]["Enabled"]                        = sc.wifi.enabled;
-    doc["WiFi"]["SSID"]                           = sc.wifi.ssid;
-    doc["WiFi"]["PSWD"]                           = sc.wifi.pswd;
-    doc["TongueTyper"]["Display"]["Brightness"]   = sc.disp.brightness;
-    doc["TongueTyper"]["Display"]["Font"]         = sc.disp.font;
-    doc["TongueTyper"]["Display"]["InvertColors"] = sc.disp.invertColors;
-    doc["TongueTyper"]["SoundFX"]["Volume"]       = sc.sfx.volume;
-    doc["TongueTyper"]["SoundFX"]["Announce"]     = sc.sfx.announce;
-    doc["TongueTyper"]["SoundFX"]["Lang"]         = sc.sfx.lang;
-    doc["TongueTyper"]["Haptics"]["Enabled"]      = sc.haptic.enabled;
-    doc["TongueTyper"]["Haptics"]["Strength"]     = sc.haptic.strength;
-    doc["TongueTyper"]["Haptics"]["Pattern"]      = sc.haptic.pattern;
-    doc["HID"]["MouseSensitivity"]                = sc.hid.mouseSense;
+    doc["ADXL"]["NTSPX"]           = sc.adxl.ntsp_xmeas;
+    doc["ADXL"]["NTSPY"]           = sc.adxl.ntsp_ymeas;
+    doc["ADXL"]["NTSPZ"]           = sc.adxl.ntsp_zmeas;
+    doc["WiFi"]["Enabled"]         = sc.wifi.enabled;
+    doc["WiFi"]["SSID"]            = sc.wifi.ssid;
+    doc["WiFi"]["PSWD"]            = sc.wifi.pswd;
+    doc["Display"]["Brightness"]   = sc.disp.brightness;
+    doc["Display"]["Font"]         = sc.disp.font;
+    doc["Display"]["InvertColors"] = sc.disp.invertColors;
+    doc["SoundFX"]["Volume"]       = sc.sfx.volume;
+    doc["SoundFX"]["Announce"]     = sc.sfx.announce;
+    doc["SoundFX"]["Lang"]         = sc.sfx.lang;
+    doc["Haptics"]["Enabled"]      = sc.haptic.enabled;
+    doc["Haptics"]["Strength"]     = sc.haptic.strength;
+    doc["Haptics"]["Pattern"]      = sc.haptic.pattern;
+    doc["HID"]["MouseSensitivity"] = sc.hid.mouseSense;
 
     if (serializeJsonPretty(doc, file) == 0) {
         debuglnF("Failed to write to file");
@@ -46,7 +47,7 @@ bool writeSettingsConfig(const SettingsConfig &sc) {
 void deleteSettingsConfig() {
     SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
     // todo check if begin ok
-    SD.remove("/sys/setting.json"); // todo make configurable or defined
+    SD.remove(FSPATH::Settings);
     SD.end();
 }
 
@@ -73,7 +74,7 @@ void createDefaultSettingsConfig(bool overWriteExisting) {
     defaults.hid.mouseSense    = 1200; // pixels per second maximum
 
     SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
-    File file = SD.open("/sys/setting.json", FILE_READ);
+    File file = SD.open(FSPATH::Settings, FILE_READ);
 
     if (!file || overWriteExisting) {
         file.close();
@@ -94,7 +95,7 @@ bool getSettingsConfig(SettingsConfig *sc, bool generateDefaultsIfMissing) {
     bool ret = true;
     SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
     // todo check if begin was ok
-    File file = SD.open("/sys/setting.json"); // todo make configurable or defined
+    File file = SD.open(FSPATH::Settings);
     // todo: check if(file)
     if (!file) {
         ret = false;
@@ -126,19 +127,21 @@ bool getSettingsConfig(SettingsConfig *sc, bool generateDefaultsIfMissing) {
     sc->wifi.enabled      = doc["WiFi"].as<JsonObject>()["Enabled"];
     sc->wifi.ssid         = doc["WiFi"].as<JsonObject>()["SSID"].as<String>();
     sc->wifi.pswd         = doc["WiFi"].as<JsonObject>()["PSWD"].as<String>();
-    sc->disp.brightness   = doc["TongueTyper"].as<JsonObject>()["Display"].as<JsonObject>()["Brightness"];
-    sc->disp.font         = doc["TongueTyper"].as<JsonObject>()["Display"].as<JsonObject>()["Font"].as<String>();
-    sc->disp.invertColors = doc["TongueTyper"].as<JsonObject>()["Display"].as<JsonObject>()["InvertColors"];
-    sc->sfx.volume        = doc["TongueTyper"].as<JsonObject>()["SoundFX"].as<JsonObject>()["Volume"];
-    sc->sfx.announce      = doc["TongueTyper"].as<JsonObject>()["SoundFX"].as<JsonObject>()["Announce"];
-    sc->sfx.lang          = doc["TongueTyper"].as<JsonObject>()["SoundFX"].as<JsonObject>()["Lang"].as<String>();
-    sc->haptic.enabled    = doc["TongueTyper"].as<JsonObject>()["Haptics"].as<JsonObject>()["Enabled"];
-    sc->haptic.strength   = doc["TongueTyper"].as<JsonObject>()["Haptics"].as<JsonObject>()["Strength"];
-    sc->haptic.pattern    = doc["TongueTyper"].as<JsonObject>()["Haptics"].as<JsonObject>()["Pattern"];
+    sc->disp.brightness   = doc["Display"].as<JsonObject>()["Brightness"];
+    sc->disp.font         = doc["Display"].as<JsonObject>()["Font"].as<String>();
+    sc->disp.invertColors = doc["Display"].as<JsonObject>()["InvertColors"];
+    sc->sfx.volume        = doc["SoundFX"].as<JsonObject>()["Volume"];
+    sc->sfx.announce      = doc["SoundFX"].as<JsonObject>()["Announce"];
+    sc->sfx.lang          = doc["SoundFX"].as<JsonObject>()["Lang"].as<String>();
+    sc->haptic.enabled    = doc["Haptics"].as<JsonObject>()["Enabled"];
+    sc->haptic.strength   = doc["Haptics"].as<JsonObject>()["Strength"];
+    sc->haptic.pattern    = doc["Haptics"].as<JsonObject>()["Pattern"];
     sc->hid.mouseSense    = doc["HID"].as<JsonObject>()["MouseSensitivity"];
 
     // we should check if any of these are null
     // and throw something up, maybe overwrite the existing config.
+    // range validation is up to the individual task.
+    
     file.close();
     SD.end();
 
@@ -162,32 +165,4 @@ void printSettingsConfig(const SettingsConfig &sc) {
     debugf("s: %f\n", sc.haptic.strength);
     debugf("n: %d\n", sc.haptic.pattern);
     debugf("m: %d\n", sc.hid.mouseSense);
-}
-
-void testFunctions() {
-
-    deleteSettingsConfig();
-
-    SettingsConfig settingsconfig;
-
-    debugln("gettings settings config");
-
-    getSettingsConfig(&settingsconfig); // first call should generate a new
-                                        // config, as it was deleted
-
-    printSettingsConfig(settingsconfig);
-
-    // test: increment a value
-    settingsconfig.hid.mouseSense += 1;
-
-    debugln("writing it back");
-
-    writeSettingsConfig(settingsconfig);
-
-    getSettingsConfig(&settingsconfig);
-
-    debugln("here it is again, freshly read:");
-    printSettingsConfig(settingsconfig);
-
-    debugln("done");
 }

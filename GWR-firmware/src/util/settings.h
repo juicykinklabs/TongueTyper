@@ -9,4 +9,3 @@ void deleteSettingsConfig();
 void createDefaultSettingsConfig(bool overWriteExisting = false);
 bool getSettingsConfig(SettingsConfig * sc, bool generateDefaultsIfMissing = true);
 void printSettingsConfig(const SettingsConfig &sc);
-void testFunctions();
