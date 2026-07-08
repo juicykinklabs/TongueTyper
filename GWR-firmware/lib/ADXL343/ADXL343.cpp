@@ -42,7 +42,7 @@ void ADXL343::writeRegister(uint8_t reg, uint8_t value) {
 }
 
 uint8_t ADXL343::readRegister(uint8_t reg) {
-    uint8_t buffer[2] = {(reg) | uint8_t(0x80), uint8_t(0xFF)};
+    uint8_t buffer[2] = {uint8_t(reg | 0x80), uint8_t(0xFF)};
     SPI.beginTransaction(SPISettings(_spiclock, MSBFIRST, SPI_MODE3));
     digitalWrite(_cs, LOW);
     NOP();
