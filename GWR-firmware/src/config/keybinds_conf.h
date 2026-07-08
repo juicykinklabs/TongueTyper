@@ -1,129 +1,125 @@
 #pragma once
 
 #include <Arduino.h>
-
 #include <USB.h>
 #include <USBHIDKeyboard.h>
 #include <USBHIDMouse.h>
 
-#define JOYSTICKMODE_STANDARD    (0) // the combination just presses the key once
-#define JOYSTICKMODE_TOGGLEHOLD  (1) // the combination toggles holding of the key
-#define JOYSTICKMODE_INTERACTIVE (2) // the key is held until the physical button is released
+#include "hardware_conf.h"
+
+// potential todo: put this all in an object with robust getters/setters
+
+// *** AUDIO/IMAGE MODE ***
+// allows navigating
+// press 1-> select sound code
+// press 2-> select image code
+// press 5-> play image and sound file simultaneously
+// (then a two digit sequence, yielding 49 possible binds per media type)
+
+constexpr uint8_t MM_BUTTON_AUDIO = Buttons::FREN;
+constexpr uint8_t MM_BUTTON_IMAGE = Buttons::SHAFT;
+constexpr uint8_t MM_BUTTON_BOTH  = Buttons::LFAR;
+
+enum KeybindMode {
+    STANDARD,   // the combination just presses the key once
+    TOGGLEHOLD, // the combination toggles holding of the key
+    INTERACTIVE // the key is held until the physical button is released
+};
 
 // *** KEYBOARD MODE ***
 // requires build flags set up for USB-OTG
-
-// mapping for each button onto a gpio expander port and bit
-// port A: just the bit number
-// port B: bit is &'d with 0x80
-constexpr uint8_t TIP   = 7;
-constexpr uint8_t FREN  = 3;
-constexpr uint8_t SHAFT = 1;
-constexpr uint8_t LNEAR = 4;
-constexpr uint8_t RNEAR = 6;
-constexpr uint8_t LFAR  = 0;
-constexpr uint8_t RFAR  = 2;
-
-// example extension:
-#define HAS_REVB_DAUGHTERBOARD (1)
-constexpr uint8_t TOPP = 0 | 0x80; // top button
-constexpr uint8_t SHF2 = 1 | 0x80; // second shaft button
-constexpr uint8_t LMID = 2 | 0x80; // left-middle button
-constexpr uint8_t RMID = 3 | 0x80; // right-middle button
-
+// operates in keybindmode standard
 // use scancodes for non-printing keys and modifiers (>= 0x80)
 // 0U signifies an unassigned key
+#define KEYBOARDMAP_WIDTH (3)
+constexpr uint8_t keyboard_map[][KEYBOARDMAP_WIDTH] = {
+    {Buttons::TIP,   Buttons::TIP,   '.'          },
+    {Buttons::TIP,   Buttons::FREN,  'Y'          },
+    {Buttons::TIP,   Buttons::SHAFT, 'Z'          },
+    {Buttons::TIP,   Buttons::LNEAR, 'G'          },
+    {Buttons::TIP,   Buttons::RNEAR, 'P'          },
+    {Buttons::TIP,   Buttons::LFAR,  0U           },
+    {Buttons::TIP,   Buttons::RFAR,  0U           },
 
-uint8_t keyboard_map[][3] = {
-    {TIP,   TIP,   '.'          },
-    {TIP,   FREN,  'Y'          },
-    {TIP,   SHAFT, 'Z'          },
-    {TIP,   LNEAR, 'G'          },
-    {TIP,   RNEAR, 'P'          },
-    {TIP,   LFAR,  0U           },
-    {TIP,   RFAR,  0U           },
+    {Buttons::FREN,  Buttons::TIP,   'U'          },
+    {Buttons::FREN,  Buttons::FREN,  'E'          },
+    {Buttons::FREN,  Buttons::SHAFT, 'I'          },
+    {Buttons::FREN,  Buttons::LNEAR, 'A'          },
+    {Buttons::FREN,  Buttons::RNEAR, 'O'          },
+    {Buttons::FREN,  Buttons::LFAR,  'B'          },
+    {Buttons::FREN,  Buttons::RFAR,  'V'          },
 
-    {FREN,  TIP,   'U'          },
-    {FREN,  FREN,  'E'          },
-    {FREN,  SHAFT, 'I'          },
-    {FREN,  LNEAR, 'A'          },
-    {FREN,  RNEAR, 'O'          },
-    {FREN,  LFAR,  'B'          },
-    {FREN,  RFAR,  'V'          },
+    {Buttons::SHAFT, Buttons::TIP,   KEY_BACKSPACE},
+    {Buttons::SHAFT, Buttons::FREN,  'R'          },
+    {Buttons::SHAFT, Buttons::SHAFT, KEY_SPACE    },
+    {Buttons::SHAFT, Buttons::LNEAR, 'L'          },
+    {Buttons::SHAFT, Buttons::RNEAR, 'D'          },
+    {Buttons::SHAFT, Buttons::LFAR,  'X'          },
+    {Buttons::SHAFT, Buttons::RFAR,  'Q'          },
 
-    {SHAFT, TIP,   KEY_BACKSPACE},
-    {SHAFT, FREN,  'R'          },
-    {SHAFT, SHAFT, KEY_SPACE    },
-    {SHAFT, LNEAR, 'L'          },
-    {SHAFT, RNEAR, 'D'          },
-    {SHAFT, LFAR,  'X'          },
-    {SHAFT, RFAR,  'Q'          },
+    {Buttons::LNEAR, Buttons::TIP,   'K'          },
+    {Buttons::LNEAR, Buttons::FREN,  'S'          },
+    {Buttons::LNEAR, Buttons::SHAFT, 'C'          },
+    {Buttons::LNEAR, Buttons::LNEAR, 'T'          },
+    {Buttons::LNEAR, Buttons::RNEAR, 'M'          },
+    {Buttons::LNEAR, Buttons::LFAR,  '!'          },
+    {Buttons::LNEAR, Buttons::RFAR,  '?'          },
 
-    {LNEAR, TIP,   'K'          },
-    {LNEAR, FREN,  'S'          },
-    {LNEAR, SHAFT, 'C'          },
-    {LNEAR, LNEAR, 'T'          },
-    {LNEAR, RNEAR, 'M'          },
-    {LNEAR, LFAR,  '!'          },
-    {LNEAR, RFAR,  '?'          },
+    {Buttons::RNEAR, Buttons::TIP,   'J'          },
+    {Buttons::RNEAR, Buttons::FREN,  'H'          },
+    {Buttons::RNEAR, Buttons::SHAFT, 'W'          },
+    {Buttons::RNEAR, Buttons::LNEAR, 'F'          },
+    {Buttons::RNEAR, Buttons::RNEAR, 'N'          },
+    {Buttons::RNEAR, Buttons::LFAR,  0U           },
+    {Buttons::RNEAR, Buttons::RFAR,  KEY_RETURN   },
 
-    {RNEAR, TIP,   'J'          },
-    {RNEAR, FREN,  'H'          },
-    {RNEAR, SHAFT, 'W'          },
-    {RNEAR, LNEAR, 'F'          },
-    {RNEAR, RNEAR, 'N'          },
-    {RNEAR, LFAR,  0U           },
-    {RNEAR, RFAR,  KEY_RETURN   },
+    {Buttons::LFAR,  Buttons::TIP,   0U           },
+    {Buttons::LFAR,  Buttons::FREN,  0U           },
+    {Buttons::LFAR,  Buttons::SHAFT, 0U           },
+    {Buttons::LFAR,  Buttons::LNEAR, 0U           },
+    {Buttons::LFAR,  Buttons::RNEAR, 0U           },
+    {Buttons::LFAR,  Buttons::LFAR,  0U           },
+    {Buttons::LFAR,  Buttons::RFAR,  0U           },
 
-    {LFAR,  TIP,   0U           },
-    {LFAR,  FREN,  0U           },
-    {LFAR,  SHAFT, 0U           },
-    {LFAR,  LNEAR, 0U           },
-    {LFAR,  RNEAR, 0U           },
-    {LFAR,  LFAR,  0U           },
-    {LFAR,  RFAR,  0U           },
-
-    {RFAR,  TIP,   0U           },
-    {RFAR,  FREN,  0U           },
-    {RFAR,  SHAFT, 0U           },
-    {RFAR,  LNEAR, 0U           },
-    {RFAR,  RNEAR, 0U           },
-    {RFAR,  LFAR,  0U           },
-    {RFAR,  RFAR,  0U           },
+    {Buttons::RFAR,  Buttons::TIP,   0U           },
+    {Buttons::RFAR,  Buttons::FREN,  0U           },
+    {Buttons::RFAR,  Buttons::SHAFT, 0U           },
+    {Buttons::RFAR,  Buttons::LNEAR, 0U           },
+    {Buttons::RFAR,  Buttons::RNEAR, 0U           },
+    {Buttons::RFAR,  Buttons::LFAR,  0U           },
+    {Buttons::RFAR,  Buttons::RFAR,  0U           },
 };
+
+constexpr uint32_t KEYBOARDMAP_LENGTH = sizeof(keyboard_map) / KEYBOARDMAP_WIDTH;
 
 // *** JOYSTICK MODE ***
+#define JOYSTICKMAP_SINGLE_WIDTH (2)
 
-uint8_t joystick_single_keyMap[][2] = {
-    {FREN,  'W'      },
-    {SHAFT, KEY_SPACE},
-    {LNEAR, 'A'      },
-    {RNEAR, 'D'      },
+constexpr uint8_t joystick_single_keyMap[][JOYSTICKMAP_SINGLE_WIDTH] = {
+    {Buttons::FREN,  'W'      },
+    {Buttons::SHAFT, KEY_SPACE},
+    {Buttons::LNEAR, 'A'      },
+    {Buttons::RNEAR, 'D'      },
 };
 
-uint8_t joystick_single_mouseMap[][2] = {
-    {LFAR, MOUSE_LEFT },
-    {RFAR, MOUSE_RIGHT},
+constexpr uint8_t joystick_single_mouseMap[][JOYSTICKMAP_SINGLE_WIDTH] = {
+    {Buttons::LFAR, MOUSE_LEFT },
+    {Buttons::RFAR, MOUSE_RIGHT},
 };
 
-uint8_t joystick_dual_map[][4] = {
+#define JOYSTICKMAP_DUAL_WIDTH (4)
+constexpr uint8_t joystick_dual_map[][JOYSTICKMAP_DUAL_WIDTH] = {
     // button1, button2, key to press, press mode
-    {TIP, TIP,   'S',            JOYSTICKMODE_STANDARD   },
-    {TIP, FREN,  'R',            JOYSTICKMODE_STANDARD   },
-    {TIP, SHAFT, 'Q',            JOYSTICKMODE_STANDARD   },
-    {TIP, LNEAR, 'F',            JOYSTICKMODE_STANDARD   },
-    {TIP, RNEAR, 'E',            JOYSTICKMODE_STANDARD   },
-    {TIP, LFAR,  KEY_LEFT_SHIFT, JOYSTICKMODE_TOGGLEHOLD },
-    {TIP, RFAR,  KEY_TAB,        JOYSTICKMODE_INTERACTIVE},
+    // ! only works with keyboard for now (e.g. no middle click via a 2-button keybind)
+    {Buttons::TIP, Buttons::TIP,   'S',            KeybindMode::INTERACTIVE},
+    {Buttons::TIP, Buttons::FREN,  'R',            KeybindMode::STANDARD   },
+    {Buttons::TIP, Buttons::SHAFT, 'Q',            KeybindMode::STANDARD   },
+    {Buttons::TIP, Buttons::LNEAR, 'F',            KeybindMode::STANDARD   },
+    {Buttons::TIP, Buttons::RNEAR, 'E',            KeybindMode::STANDARD   },
+    {Buttons::TIP, Buttons::LFAR,  KEY_LEFT_SHIFT, KeybindMode::TOGGLEHOLD },
+    {Buttons::TIP, Buttons::RFAR,  KEY_TAB,        KeybindMode::INTERACTIVE},
 };
 
-// *** AUDIO/IMAGE MODE ***
-// basically navigate folders.
-// press 1-> select sound code
-// press 2-> select image code
-// press 5-> play image and sound file simultaneously (todo in future)
-// (then a two digit sequence, yields 49 binds per media type)
-
-constexpr uint8_t MM_BUTTON_AUDIO = FREN;
-constexpr uint8_t MM_BUTTON_IMAGE = SHAFT;
-constexpr uint8_t MM_BUTTON_BOTH  = LFAR;
+constexpr uint32_t JOYSTICKMAP_SINGLEKEY_LENGTH   = sizeof(joystick_single_keyMap) / JOYSTICKMAP_SINGLE_WIDTH;
+constexpr uint32_t JOYSTICKMAP_SINGLEMOUSE_LENGTH = sizeof(joystick_single_mouseMap) / JOYSTICKMAP_SINGLE_WIDTH;
+constexpr uint32_t JOYSTICKMAP_DUAL_LENGTH        = sizeof(joystick_dual_map) / JOYSTICKMAP_DUAL_WIDTH;

@@ -8,16 +8,25 @@
 #include "config/hardware_conf.h"
 
 #include "structs/AccelEvent.h"
+#include "structs/MouseClicks.h"
 
-#include "taskglobals.h" // constains Settings object
-
-USBHIDMouse Mouse;
+#include "taskglobals.h" // constains Settings object, Mouse object
 
 void task_mouse(void *pv) {
-    Mouse.begin();
-    USB.begin(); // todo: check return value
 
     while (1) {
+
+        // new clicker
+        MouseClicks mc;
+        if (xQueueReceive(q_mouseclicks, (void*) &mc, (TickType_t) 0)) {
+            if (mc.state == MouseButtonState::PRESSED) {
+                Mouse.press(mc.button);
+            } else if (mc.state == MouseButtonState::RELEASED) {
+                Mouse.release(mc.button);
+            }
+        }
+
+        // plain old accelerometer:
         // doubles x, y, z represent accelerationvector in a gravitational field
         // hold still when pointing in a circle around Y direction
         // as Z value gets more positive -> mouse up
@@ -45,6 +54,9 @@ void task_mouse(void *pv) {
         // todo average of numerous samples for smooth operation
         // todo take DERIVATIVE or something, for mouse acceleration enabling FLICKS!
         double acc_mag           = sqrt(x * x + y * y + z * z);
+        if (acc_mag == 0.0) {
+            continue; // don't divide by zero
+        }
         double vec3_direction[3] = {x / acc_mag, y / acc_mag, z / acc_mag};
         // debugf("unit vector is: %f %f %f\n", vec3_direction[0], vec3_direction[1], vec3_direction[2]);
 
@@ -66,8 +78,8 @@ void task_mouse(void *pv) {
 
             Mouse.move(dotsX, dotsY);
         }
-
-        vTaskDelay(((1000 / REPORT_FREQUENCY) - (millis() - t_start)) / portTICK_PERIOD_MS);
+        uint32_t timeToNext_ms = (1000 / REPORT_FREQUENCY) - (millis() - t_start);
+        vTaskDelay(timeToNext_ms / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);
 }
