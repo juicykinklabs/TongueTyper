@@ -1,20 +1,16 @@
-# GagWriter Remastered
-
-## Public-facing Product Name: TongueTyper
+# TongueTyper
 
 A reinvented talking-gag-dildotyper platform with WiFi control, USB output, accelerometer, speaker, and haptic feedback.
 
 ## Directory
 
- - GWR-firmware: ESP32-S3 firmware (platformio, arduino)
+ - GWR-firmware: ESP32-S3 firmware (platformio, arduinoespressif32)
  - GWR-pcb: printed circuit board design files (KiCAD)
  - SD-Media: SD Card files and helper scripts
-    - Additional emojis can be found: https://www.emojiall.com/en/image-emoji-platform/apple/hd
+    - Additional emojis may be found: https://www.emojiall.com/en/image-emoji-platform/apple/hd
  - GWR-Models: 3D printable and silicone parts
 
 ## Footer
-
-A BreezeWorks-VacTech Project.
 
 Our Mission Statement: To empower every top and every bottom on the planet to achieve more.
 
