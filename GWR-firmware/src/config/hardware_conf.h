@@ -31,6 +31,7 @@
 namespace Pins {
 #if PCB_REVISION == 0
     // Breadboarding with an esp32-s3 NON plus
+    constexpr uint8_t HVIBE = GPIO_NUM_44;
     namespace SPI {
         constexpr uint8_t SCK  = D8;
         constexpr uint8_t MISO = D9;
@@ -54,7 +55,6 @@ namespace Pins {
     }
 #elif PCB_REVISION == 1
     // PCB rev A pinout
-    // these are 1-off pins, so I didn't nest the namespace at all
     constexpr uint8_t HVIBE = GPIO_NUM_43;
     constexpr uint8_t BMODE = GPIO_NUM_13;
 
@@ -93,6 +93,26 @@ namespace Pins {
 #endif
 } // namespace Pins
 
+namespace Buttons {
+    // mapping for each button onto a gpio expander port and bit
+    // port A: just the bit number
+    // port B: bit is &'d with 0x80
+    constexpr uint8_t TIP   = 7;
+    constexpr uint8_t FREN  = 3;
+    constexpr uint8_t SHAFT = 1;
+    constexpr uint8_t LNEAR = 4;
+    constexpr uint8_t RNEAR = 6;
+    constexpr uint8_t LFAR  = 0;
+    constexpr uint8_t RFAR  = 2;
+
+// example extension:
+#ifdef HAS_REVB_DAUGHTERBOARD
+    constexpr uint8_t TOPP = 0 | 0x80; // top button
+    constexpr uint8_t SHF2 = 1 | 0x80; // second shaft button
+    constexpr uint8_t LMID = 2 | 0x80; // left-middle button
+    constexpr uint8_t RMID = 3 | 0x80; // right-middle button
+#endif
+} // namespace Buttons
 // expert zone
 
 // interface speeds
