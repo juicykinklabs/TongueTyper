@@ -16,12 +16,12 @@ inline void timestamp() { Serial.printf("[%8u.%03u] ", millis(), micros() % 1000
 inline void timestampF() { Serial.printf(F("[%8u.%03u] "), millis(), micros() % 1000UL);}
 
 #ifdef VERSION_DEV
-#define debugStart() Serial.begin(BAUDRATE_ESP32); delay(SERIAL_CONNECT_DELAY)
-#define debug(...) timestamp(); Serial.print(__VA_ARGS__); Serial.flush()
-#define debugln(...) timestamp(); Serial.println(__VA_ARGS__); Serial.flush()
-#define debugf(...) timestamp(); Serial.printf(__VA_ARGS__); Serial.flush()
-#define debugF(...) timestampF(); Serial.print(F(__VA_ARGS__)); Serial.flush()
-#define debuglnF(...) timestampF(); Serial.println(F(__VA_ARGS__)); Serial.flush()
+#define debugStart() Serial.begin(BAUDRATE_ESP32);
+#define debug(...) timestamp(); Serial.print(__VA_ARGS__); // Serial.flush()
+#define debugln(...) timestamp(); Serial.println(__VA_ARGS__); // Serial.flush()
+#define debugf(...) timestamp(); Serial.printf(__VA_ARGS__); // Serial.flush()
+#define debugF(...) timestampF(); Serial.print(F(__VA_ARGS__)); // Serial.flush()
+#define debuglnF(...) timestampF(); Serial.println(F(__VA_ARGS__)); // Serial.flush()
 
 #else
 
