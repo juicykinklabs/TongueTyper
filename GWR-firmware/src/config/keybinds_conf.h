@@ -30,6 +30,7 @@ enum KeybindMode {
 // requires build flags set up for USB-OTG
 // operates in keybindmode standard
 // use scancodes for non-printing keys and modifiers (>= 0x80)
+// the character must also be supported by the current font
 // 0U signifies an unassigned key
 #define KEYBOARDMAP_WIDTH (3)
 constexpr uint8_t keyboard_map[][KEYBOARDMAP_WIDTH] = {
@@ -73,21 +74,21 @@ constexpr uint8_t keyboard_map[][KEYBOARDMAP_WIDTH] = {
     {Buttons::RNEAR, Buttons::LFAR,  0U           },
     {Buttons::RNEAR, Buttons::RFAR,  KEY_RETURN   },
 
-    {Buttons::LFAR,  Buttons::TIP,   0U           },
-    {Buttons::LFAR,  Buttons::FREN,  0U           },
-    {Buttons::LFAR,  Buttons::SHAFT, 0U           },
-    {Buttons::LFAR,  Buttons::LNEAR, 0U           },
-    {Buttons::LFAR,  Buttons::RNEAR, 0U           },
+    {Buttons::LFAR,  Buttons::TIP,   '1'          },
+    {Buttons::LFAR,  Buttons::FREN,  '2'          },
+    {Buttons::LFAR,  Buttons::SHAFT, '3'          },
+    {Buttons::LFAR,  Buttons::LNEAR, '4'          },
+    {Buttons::LFAR,  Buttons::RNEAR, 0U          },
     {Buttons::LFAR,  Buttons::LFAR,  0U           },
     {Buttons::LFAR,  Buttons::RFAR,  0U           },
 
-    {Buttons::RFAR,  Buttons::TIP,   0U           },
-    {Buttons::RFAR,  Buttons::FREN,  0U           },
-    {Buttons::RFAR,  Buttons::SHAFT, 0U           },
-    {Buttons::RFAR,  Buttons::LNEAR, 0U           },
-    {Buttons::RFAR,  Buttons::RNEAR, 0U           },
+    {Buttons::RFAR,  Buttons::TIP,   '9'          },
+    {Buttons::RFAR,  Buttons::FREN,  '8'          },
+    {Buttons::RFAR,  Buttons::SHAFT, '7'          },
+    {Buttons::RFAR,  Buttons::LNEAR, '6'          },
+    {Buttons::RFAR,  Buttons::RNEAR, '5'           },
     {Buttons::RFAR,  Buttons::LFAR,  0U           },
-    {Buttons::RFAR,  Buttons::RFAR,  0U           },
+    {Buttons::RFAR,  Buttons::RFAR,  '0'          },
 };
 
 constexpr uint32_t KEYBOARDMAP_LENGTH = sizeof(keyboard_map) / KEYBOARDMAP_WIDTH;
