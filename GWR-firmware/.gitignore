@@ -5,4 +5,7 @@
 .vscode/ipch
 
 .vscode/extensions.json
+.vscode/settings.json
 .venv/*
+
+notes.md
