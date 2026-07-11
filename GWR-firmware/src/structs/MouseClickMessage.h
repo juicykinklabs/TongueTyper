@@ -7,7 +7,7 @@ enum MouseButtonState {
     PRESSED,
 };
 
-typedef struct MouseClicks {
+typedef struct MouseclickMessage {
     MouseButtonState state;
     uint8_t button;
-} MouseClicks;
+} MouseclickMessage;

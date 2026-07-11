@@ -15,9 +15,9 @@ enum UserInputEnum {
     RELEASE  // a button has been released (button1) (2/3 are dontcare)
 };
 
-typedef struct UserInputEvent_t {
+typedef struct UserInputMessage {
     UserInputEnum uit;
     uint8_t button1;
     uint8_t button2;
     uint8_t button3;
-} UserInputEvent_t;
+} UserInputMessage;

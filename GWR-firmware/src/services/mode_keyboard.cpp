@@ -3,9 +3,9 @@
 #include "config/app_conf.h"
 #include "config/keybinds_conf.h"
 #include "config/constants.h"
-#include "structs/UserInputEvent.h"
-#include "structs/AudioEvent.h"
-#include "structs/MouseClicks.h"
+#include "structs/UserInputMessage.h"
+#include "structs/AudioMessage.h"
+#include "structs/MouseClickMessage.h"
 #include "taskglobals.h"
 
 void task_mode_keyboard(void *pv) {
@@ -15,7 +15,7 @@ void task_mode_keyboard(void *pv) {
     // todo: this has to be shared between the mouse and keyboard. so it should be initialized globally
     // other initialization may follow
 
-    UserInputEvent_t someEvent;
+    UserInputMessage someEvent;
     while (1) {
         vTaskDelay(10); // for debuggin
         switch (DEVICE_MODE) {
@@ -77,7 +77,7 @@ void task_mode_keyboard(void *pv) {
                                     }
                                 }
                                 if (isMouseButton) {
-                                    MouseClicks mc;
+                                    MouseclickMessage mc;
                                     mc.state  = MouseButtonState::PRESSED;
                                     mc.button = which_mousebutton;
                                     xQueueSend(q_mouseclicks, (void *) &mc, (TickType_t) 0);
@@ -120,7 +120,7 @@ void task_mode_keyboard(void *pv) {
                                 }
                             }
                             if (isMouseButton) {
-                                MouseClicks mc;
+                                MouseclickMessage mc;
                                 mc.state  = MouseButtonState::RELEASED;
                                 mc.button = which_mousebutton;
                                 xQueueSend(q_mouseclicks, (void *) &mc, (TickType_t) 0);
@@ -212,9 +212,9 @@ void task_mode_keyboard(void *pv) {
 
                                 debugln("playing sound");
                                 debugln(fname);
-
-                                AudioEvent_t myAudioEvent;
-                                myAudioEvent.data = fname;
+                                AudioMessage myAudioEvent;
+                                // the queue receiver will deallocate this for us. probably.
+                                strcpy(myAudioEvent.data, fname.c_str());
                                 myAudioEvent.type = AudioEventEnum::SFX;
                                 xQueueSend(q_sfx_tts, (void *) &myAudioEvent, (TickType_t) 0);
                                 // audio event string could go out of scope here

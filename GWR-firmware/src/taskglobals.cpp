@@ -4,10 +4,11 @@
 
 #include "config/app_conf.h"
 #include "util/settings.h"
-#include "structs/AudioEvent.h"
-#include "structs/UserInputEvent.h"
-#include "structs/MouseClicks.h"
-#include "structs/HapticCommand.h"
+#include "structs/AudioMessage.h"
+#include "structs/UserInputMessage.h"
+#include "structs/MouseClickMessage.h"
+#include "structs/HapticMessage.h"
+#include "structs/DisplayMessage.h"
 
 DeviceMode_t DEVICE_MODE;
 
@@ -19,21 +20,11 @@ SemaphoreHandle_t Mutexes::USBPORT   = NULL;
 SemaphoreHandle_t Mutexes::AccelData = NULL;
 SemaphoreHandle_t Mutexes::SDCard    = NULL;
 
-TaskHandle_t Tasks::soundfx        = NULL;
-TaskHandle_t Tasks::rgbled         = NULL;
-TaskHandle_t Tasks::mouse_out      = NULL;
-TaskHandle_t Tasks::mode           = NULL;
-TaskHandle_t Tasks::heartbeat      = NULL;
-TaskHandle_t Tasks::display        = NULL;
-TaskHandle_t Tasks::buttons        = NULL;
-TaskHandle_t Tasks::accel          = NULL;
-TaskHandle_t Tasks::wificonnection = NULL;
-TaskHandle_t Tasks::haptics         = NULL;
-
 QueueHandle_t q_sfx_tts     = NULL;
 QueueHandle_t q_userinput   = NULL;
 QueueHandle_t q_mouseclicks = NULL;
 QueueHandle_t q_haptic      = NULL;
+QueueHandle_t q_display     = NULL;
 
 SettingsConfig settings;
 
@@ -63,17 +54,19 @@ void initTaskGlobals() {
     } else {
         debuglnF("USB attached");
     }
-
+ 
     Mutexes::SPI       = xSemaphoreCreateMutex();
     Mutexes::USBPORT   = xSemaphoreCreateMutex();
     Mutexes::AccelData = xSemaphoreCreateMutex();
     Mutexes::SDCard    = xSemaphoreCreateMutex();
 
-    q_sfx_tts     = xQueueCreate(10, sizeof(AudioEvent_t));
-    q_userinput   = xQueueCreate(4, sizeof(UserInputEvent_t));
-    q_mouseclicks = xQueueCreate(8, sizeof(MouseClicks));
-    q_haptic      = xQueueCreate(2, sizeof(HapticCommand));
-
+    // queues
+    q_userinput   = xQueueCreate(4, sizeof(UserInputMessage));
+    q_mouseclicks = xQueueCreate(8, sizeof(MouseclickMessage));
+    q_sfx_tts     = xQueueCreate(10, sizeof(AudioMessage));
+    q_display     = xQueueCreate(3, sizeof(DisplayMessage));
+    q_haptic      = xQueueCreate(2, sizeof(HapticMessage));
+  
     if (!getSettingsConfig(&settings, true)) {
         createDefaultSettingsConfig(true);
     }
@@ -84,4 +77,5 @@ void initTaskGlobals() {
     g_accelEvent.z = 0;
 
     g_wifiReady = false;
+    debuglnF("Init complete");
 }

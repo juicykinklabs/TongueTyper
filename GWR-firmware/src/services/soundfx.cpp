@@ -5,7 +5,7 @@
 
 #include "config/app_conf.h"
 #include "config/hardware_conf.h"
-#include "structs/AudioEvent.h"
+#include "structs/AudioMessage.h"
 #include "taskglobals.h"
 
 Audio audio;
@@ -32,18 +32,18 @@ void task_soundfx(void *pv) {
         vTaskDelete(NULL);
     }
 
-    static AudioEvent_t thisAudioEvent;
+    AudioMessage thisAudioEvent;
 
     while (1) {
         if (xQueueReceive(q_sfx_tts, (void *) &thisAudioEvent, portMAX_DELAY) == pdTRUE) {
-            debugf("audio queue consumer received data: %s\n", thisAudioEvent.data.c_str());
+            debugf("audio queue consumer received data: %s\n", thisAudioEvent.data);
             audio.setVolume(volumeToVolume(settings.sfx.volume));
             debugf("set volume to %d\n", volumeToVolume(settings.sfx.volume));
             bool connectionSuccess = false;
             switch (thisAudioEvent.type) {
                 case AudioEventEnum::SFX: {
                     SD.begin(Pins::SD::CS); // todo semamphore
-                    connectionSuccess = audio.connecttoFS(SD, thisAudioEvent.data.c_str());
+                    connectionSuccess = audio.connecttoFS(SD, thisAudioEvent.data);
                     audioLoopToCompletion();
                     SD.end();
                     break;
@@ -51,7 +51,7 @@ void task_soundfx(void *pv) {
                 case AudioEventEnum::TTS: {
                     debugf("using dialect %s\n", settings.sfx.lang.c_str());
                     if (g_wifiReady) {
-                        connectionSuccess = audio.connecttospeech(thisAudioEvent.data.c_str(), settings.sfx.lang.c_str());
+                        connectionSuccess = audio.connecttospeech(thisAudioEvent.data, settings.sfx.lang.c_str());
                         audioLoopToCompletion();
                     } else {
                         debugln("No WiFi, skipping TTS");
@@ -64,6 +64,8 @@ void task_soundfx(void *pv) {
             } else {
                 debugln("ok done :3");
             }
+
+            //vPortFree(thisAudioEvent); // is this how we free it?
         }
     }
     vTaskDelete(NULL);

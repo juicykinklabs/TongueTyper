@@ -8,7 +8,7 @@
 #include "config/hardware_conf.h"
 
 #include "structs/AccelEvent.h"
-#include "structs/MouseClicks.h"
+#include "structs/MouseClickMessage.h"
 
 #include "taskglobals.h" // constains Settings object, Mouse object
 
@@ -17,7 +17,7 @@ void task_mouse(void *pv) {
     while (1) {
 
         // new clicker
-        MouseClicks mc;
+        MouseclickMessage mc;
         if (xQueueReceive(q_mouseclicks, (void*) &mc, (TickType_t) 0)) {
             if (mc.state == MouseButtonState::PRESSED) {
                 Mouse.press(mc.button);

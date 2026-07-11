@@ -1,12 +1,12 @@
 #pragma once
-#include "structs/HapticCommand.h"
+#include "structs/HapticMessage.h"
 
 void task_hapticEngine(void *pv);
 
-bool queueHapticPattern(const HapticCommand& hc);
+bool queueHapticPattern(const HapticMessage& hc);
 void pattern_AccordingToSettings();
 
-const extern HapticCommand pattern_Blip;
-const extern HapticCommand pattern_TwoBlip;
-const extern HapticCommand pattern_Jolt;
-const extern HapticCommand pattern_Triangle;
+const extern HapticMessage pattern_Blip;
+const extern HapticMessage pattern_TwoBlip;
+const extern HapticMessage pattern_Jolt;
+const extern HapticMessage pattern_Triangle;

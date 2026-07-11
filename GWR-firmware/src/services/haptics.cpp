@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 #include "config/hardware_conf.h"
-#include "structs/HapticCommand.h"
+#include "structs/HapticMessage.h"
 #include "util/settings.h"
 #include "util/mapfloat.h"
 #include "taskglobals.h"
@@ -13,7 +13,7 @@ void task_hapticEngine(void *pv) {
     pinMode(Pins::HVIBE, OUTPUT);
     digitalWrite(Pins::HVIBE, LOW);
 
-    HapticCommand hc;
+    HapticMessage hc;
     while (1) {
         if (xQueueReceive(q_haptic, (void *) &hc, portMAX_DELAY)) {
             if (settings.haptic.enabled) {
@@ -38,7 +38,7 @@ void task_hapticEngine(void *pv) {
     vTaskDelete(NULL);
 }
 
-bool queueHapticPattern(const HapticCommand &hc) { return xQueueSend(q_haptic, (void *) &hc, (TickType_t) 0) == pdPASS; }
+bool queueHapticPattern(const HapticMessage &hc) { return xQueueSend(q_haptic, (void *) &hc, (TickType_t) 0) == pdPASS; }
 
 void pattern_AccordingToSettings() {
     // (something like this)
@@ -63,22 +63,22 @@ void pattern_AccordingToSettings() {
 }
 
 // note for new patterns: scale so that the peak intensity is 0xFF.
-const HapticCommand pattern_Blip = {
+const HapticMessage pattern_Blip = {
     {0x80, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00}, // intensity
     {0x1A, 0x50, 0x1A, 0x00, 0x00, 0x00, 0x00, 0x00}  // duration
 };
 
-const HapticCommand pattern_TwoBlip = {
+const HapticMessage pattern_TwoBlip = {
     {0x80, 0xFF, 0x80, 0x00, 0x73, 0xE5, 0x73, 0x00}, // intensity
     {0x1A, 0x50, 0x1A, 0x96, 0x1A, 0x50, 0x1A, 0x00}  // duration
 };
 
-const HapticCommand pattern_Jolt = {
+const HapticMessage pattern_Jolt = {
     {0xFF, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // intensity
     {0x60, 0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}  // duration
 };
 
-const HapticCommand pattern_Triangle = {
+const HapticMessage pattern_Triangle = {
     {0x33, 0x65, 0xA0, 0xCC, 0xFF, 0xCC, 0xA0, 0x65}, // intensity
     {0x50, 0x50, 0x50, 0x50, 0x55, 0x50, 0x50, 0x50}  // duration
 };
