@@ -22,10 +22,16 @@ void task_hapticEngine(void *pv) {
                     if (hc.intensities[i] == 0x00) {
                         digitalWrite(Pins::HVIBE, LOW);
                     } else {
+                        if (isnan(settings.haptic.strength)) {
+                            settings.haptic.strength = 0.0;
+                        }
                         double actual_strength_multiplier = constrain(settings.haptic.strength, 0.0, 1.0);
                         // map 0.0-1.0 onto 1.5/4.2 (0.35) to 3.7/4.2 (0.88)
-                        // todo check isnan
-                        actual_strength_multiplier = mapfloat(actual_strength_multiplier, 0.0, 1.0, 0.35, 0.88);
+                        if (actual_strength_multiplier <= 0.05) {
+                            actual_strength_multiplier = 0.0;
+                        } else {
+                            actual_strength_multiplier = mapfloat(actual_strength_multiplier, 0.0, 1.0, 0.35, 0.88);
+                        }
                         analogWrite(Pins::HVIBE, hc.intensities[i] * actual_strength_multiplier);
                     }
                     vTaskDelay(max(hc.durations[i] / portTICK_PERIOD_MS, (TickType_t) 1));
