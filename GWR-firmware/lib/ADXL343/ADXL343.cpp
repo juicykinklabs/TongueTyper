@@ -74,13 +74,9 @@ void ADXL343::setRange(uint8_t range) {
 
 void ADXL343::setRate(uint8_t dataRate) { writeRegister(ADXL343_REG_BW_RATE, dataRate); }
 
-void ADXL343::getAcceleration(double *x, double *y, double *z) {
-    // acceleration in Gs
-    // when Vs = 2.5, 256 LSB/g
+void ADXL343::getAccelerationRaw(int16_t *x, int16_t *y, int16_t *z) {
     // ** reinitializes SPI bus in case another peripheral took its registers **
     // remove this in future!!
-    //
-    int16_t xraw, yraw, zraw;
     uint8_t buffer[7] = {0};
     buffer[0]         = 0x32 | 0x80 | 0x40; // DATAX0, read, multi-byte
     SPI.end();
@@ -91,9 +87,17 @@ void ADXL343::getAcceleration(double *x, double *y, double *z) {
     digitalWrite(_cs, HIGH);
     SPI.endTransaction();
 
-    xraw = (int16_t) ((((uint16_t) buffer[2]) << 8) | ((uint16_t) buffer[1]));
-    yraw = (int16_t) ((((uint16_t) buffer[4]) << 8) | ((uint16_t) buffer[3]));
-    zraw = (int16_t) ((((uint16_t) buffer[6]) << 8) | ((uint16_t) buffer[5]));
+    *x = (int16_t) ((((uint16_t) buffer[2]) << 8) | ((uint16_t) buffer[1]));
+    *y = (int16_t) ((((uint16_t) buffer[4]) << 8) | ((uint16_t) buffer[3]));
+    *z = (int16_t) ((((uint16_t) buffer[6]) << 8) | ((uint16_t) buffer[5]));
+}
+
+void ADXL343::getAcceleration(double *x, double *y, double *z) {
+    // acceleration in Gs
+    // when Vs = 2.5, 256 LSB/g
+    
+    int16_t xraw, yraw, zraw;
+    getAccelerationRaw(&xraw, &yraw, &zraw);
 
     // right shift for signed type is arithmetic
     // not sure why this section is not needed, I expected data to
@@ -138,25 +142,16 @@ void ADXL343::getAcceleration3V3(double *x, double *y, double *z) {
     // with a supply voltage of 3.3 V..."
     // ~ analog datasheet
 
-    // ** reinitializes SPI bus in case another peripheral took its registers **
-    // remove this in future!!
-
     int16_t xraw, yraw, zraw;
-    uint8_t buffer[7] = {0};
-    buffer[0]         = 0x32 | 0x80 | 0x40; // DATAX0, read, multi-byte
-    SPI.end();
-    SPI.begin(_sck, _miso, _mosi);
-    SPI.beginTransaction(SPISettings(_spiclock, MSBFIRST, SPI_MODE3));
-    digitalWrite(_cs, LOW);
-    SPI.transfer(buffer, 7); // address + 6 data bytes
-    digitalWrite(_cs, HIGH);
-    SPI.endTransaction();
-
-    xraw = (int16_t) ((((uint16_t) buffer[2]) << 8) | ((uint16_t) buffer[1]));
-    yraw = (int16_t) ((((uint16_t) buffer[4]) << 8) | ((uint16_t) buffer[3]));
-    zraw = (int16_t) ((((uint16_t) buffer[6]) << 8) | ((uint16_t) buffer[5]));
+    getAccelerationRaw(&xraw, &yraw, &zraw);
 
     *x = ((double) xraw) * ADXL343_FULLRES_LSB2G_XY_3V3 - 0.025;
     *y = ((double) yraw) * ADXL343_FULLRES_LSB2G_XY_3V3 - 0.025;
     *z = ((double) zraw) * ADXL343_FULLRES_LSB2G + 0.20;
+}
+
+void ADXL343::setOffsets(int8_t OFSX, int8_t OFSY, int8_t OFSZ) {
+    writeRegister(ADXL343_REG_OFSX, (uint8_t) OFSX);
+    writeRegister(ADXL343_REG_OFSY, (uint8_t) OFSY);
+    writeRegister(ADXL343_REG_OFSZ, (uint8_t) OFSZ);
 }
