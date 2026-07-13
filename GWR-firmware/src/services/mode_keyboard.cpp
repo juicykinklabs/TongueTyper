@@ -11,7 +11,7 @@
 void task_mode_keyboard(void *pv) {
     // "keyboard" / og gagwriter
     // USB handling setup code goes here:
-    Keyboard.begin();
+    //Keyboard.begin();
     // todo: this has to be shared between the mouse and keyboard. so it should be initialized globally
     // other initialization may follow
 
