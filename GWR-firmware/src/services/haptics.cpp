@@ -1,26 +1,31 @@
 #include "haptics.h"
 #include <Arduino.h>
 
+#include "config/app_conf.h"
 #include "config/hardware_conf.h"
 #include "structs/HapticMessage.h"
 #include "util/settings.h"
 #include "util/mapfloat.h"
 #include "taskglobals.h"
 
+void disableHVibe() {
+    pinMode(Pins::HVIBE, OUTPUT);
+    digitalWrite(Pins::HVIBE, LOW);
+}
 void task_hapticEngine(void *pv) {
     // we should create the task with a higher priority
     // to faithfully recreate incoming the haptic pattern
-    pinMode(Pins::HVIBE, OUTPUT);
-    digitalWrite(Pins::HVIBE, LOW);
+    disableHVibe();
 
     HapticMessage hc;
     while (1) {
         if (xQueueReceive(q_haptic, (void *) &hc, portMAX_DELAY)) {
             if (settings.haptic.enabled) {
+                TickType_t taskSubTimer = xTaskGetTickCount();
                 for (uint8_t i = 0; i < HAPTIC_COMMAND_LEN; i++) {
 
                     if (hc.intensities[i] == 0x00) {
-                        digitalWrite(Pins::HVIBE, LOW);
+                        disableHVibe();
                     } else {
                         if (isnan(settings.haptic.strength)) {
                             settings.haptic.strength = 0.0;
@@ -34,11 +39,11 @@ void task_hapticEngine(void *pv) {
                         }
                         analogWrite(Pins::HVIBE, hc.intensities[i] * actual_strength_multiplier);
                     }
-                    vTaskDelay(max(hc.durations[i] / portTICK_PERIOD_MS, (TickType_t) 1));
+                    vTaskDelayUntil(&taskSubTimer, max(hc.durations[i] / portTICK_PERIOD_MS, (TickType_t) 1));
                 }
             }
-            digitalWrite(Pins::HVIBE, LOW);
-            vTaskDelay(1);
+            disableHVibe();
+            vTaskDelay(5);
         }
     }
     vTaskDelete(NULL);
