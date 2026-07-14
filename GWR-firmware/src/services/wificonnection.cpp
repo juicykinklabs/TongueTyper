@@ -2,9 +2,9 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <ESPmDNS.h>
 
 #include "config/app_conf.h"
+#include "config/constants.h"
 #include "taskglobals.h"
 
 void task_wificonnection(void *pv) {
@@ -31,12 +31,9 @@ void task_wificonnection(void *pv) {
                     // improvwifi(); or something. it must update the settings object, and save to SD card
                     firstTimeConnect = false;
                 }
-                WiFi.setHostname("TTyper-Alpha"); // letters, numbers, and dashes only
+                WiFi.setHostname(WIRELESS::hostname); 
                 WiFi.mode(WIFI_STA);
                 WiFi.begin(settings.wifi.ssid.c_str(), settings.wifi.pswd.c_str());
-                // if (!MDNS.begin("esp32_task_test")) {
-                //     // todo: handle some error
-                // }
                 uint32_t t_tryConnectStart = millis();
                 while (WiFi.status() != WL_CONNECTED) {
                     vTaskDelay(1500 / portTICK_PERIOD_MS);
