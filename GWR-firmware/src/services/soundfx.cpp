@@ -64,8 +64,6 @@ void task_soundfx(void *pv) {
             } else {
                 debugln("ok done :3");
             }
-
-            //vPortFree(thisAudioEvent); // is this how we free it?
         }
     }
     vTaskDelete(NULL);

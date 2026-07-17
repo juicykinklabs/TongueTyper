@@ -17,6 +17,6 @@ namespace FSPATH {
     constexpr char UserSoundsFolder[] = "/usermedia/sounds/"; // with trailing slash
 }
 
-namespace FSFILE {
-    // system files direct paths
+namespace WIRELESS {
+    constexpr char hostname[] = "ttyper"; // letters, numbers, and dashes only
 }

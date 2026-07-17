@@ -1,6 +1,7 @@
 #pragma once
 #include "structs/HapticMessage.h"
 
+void disableHVibe();
 void task_hapticEngine(void *pv);
 
 bool queueHapticPattern(const HapticMessage& hc);

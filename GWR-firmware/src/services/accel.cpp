@@ -26,6 +26,8 @@ void task_accel(void *pv) {
 
         accel.setRange(ADXL343_RANGE_4_G);
         accel.setRate(ADXL343_DATARATE_400_HZ);
+        accel.setOffsets(settings.adxl.ofx, settings.adxl.ofy, settings.adxl.ofz);
+        
         debugln("adxl init good");
         xSemaphoreGive(Mutexes::SPI);
     }
@@ -37,7 +39,7 @@ void task_accel(void *pv) {
                 accel.getAcceleration3V3(&(g_accelEvent.x), &(g_accelEvent.y), &(g_accelEvent.z));
                 xSemaphoreGive(Mutexes::AccelData);
             } else {
-                debuglnF("someone else has the damn accel data semaphore. what the hell?");
+                debuglnF("someone else has the accel data semaphore");
             }
             xSemaphoreGive(Mutexes::SPI);
 

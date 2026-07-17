@@ -1,8 +1,8 @@
 {
   "ADXL": {
-    "NTSPX": 0,
-    "NTSPY": 0,
-    "NTSPZ": 265
+    "OFX": 0,
+    "OFY": 0,
+    "OFZ": 0
   },
   "WiFi": {
     "Enabled": true,

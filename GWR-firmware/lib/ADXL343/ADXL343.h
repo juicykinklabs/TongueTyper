@@ -76,8 +76,11 @@ class ADXL343 {
     void setRange(uint8_t range);
     void setRate(uint8_t dataRate);
 
+    void getAccelerationRaw(int16_t *x, int16_t *y, int16_t *z);
     void getAcceleration(double *x, double *y, double *z);
     void getAcceleration3V3(double *x, double *y, double *z);
+
+    void setOffsets(int8_t OFSX, int8_t OFSY, int8_t OFSZ);
 
   private:
     uint8_t _cs, _sck, _miso, _mosi;

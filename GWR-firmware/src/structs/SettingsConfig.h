@@ -2,9 +2,9 @@
 #include <Arduino.h>
 
 typedef struct sc_adxl {
-    int16_t ntsp_xmeas;
-    int16_t ntsp_ymeas;
-    int16_t ntsp_zmeas;
+    int16_t ofx;
+    int16_t ofy;
+    int16_t ofz;
 } sc_adxl;
 
 typedef struct sc_wifi {
