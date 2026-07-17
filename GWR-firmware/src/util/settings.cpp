@@ -16,9 +16,9 @@ bool writeSettingsConfig(const SettingsConfig &sc) {
     File file = SD.open(FSPATH::Settings, FILE_WRITE);
     // todo check if file is ok
 
-    doc["ADXL"]["NTSPX"]           = sc.adxl.ntsp_xmeas;
-    doc["ADXL"]["NTSPY"]           = sc.adxl.ntsp_ymeas;
-    doc["ADXL"]["NTSPZ"]           = sc.adxl.ntsp_zmeas;
+    doc["ADXL"]["OFX"]             = sc.adxl.ofx;
+    doc["ADXL"]["OFY"]             = sc.adxl.ofy;
+    doc["ADXL"]["OFZ"]             = sc.adxl.ofz;
     doc["WiFi"]["Enabled"]         = sc.wifi.enabled;
     doc["WiFi"]["SSID"]            = sc.wifi.ssid;
     doc["WiFi"]["PSWD"]            = sc.wifi.pswd;
@@ -56,9 +56,9 @@ void createDefaultSettingsConfig(bool overWriteExisting) {
     SettingsConfig defaults;
     // we can use = with strings here because they are from the String class.
     // todo: configure these in a separate header file
-    defaults.adxl.ntsp_xmeas   = 0;
-    defaults.adxl.ntsp_ymeas   = 0;
-    defaults.adxl.ntsp_zmeas   = 265;
+    defaults.adxl.ofx          = 0;
+    defaults.adxl.ofy          = 0;
+    defaults.adxl.ofz          = 0;
     defaults.wifi.enabled      = true;
     defaults.wifi.ssid         = "myAccessPoint";
     defaults.wifi.pswd         = "myPassword";
@@ -121,9 +121,9 @@ bool getSettingsConfig(SettingsConfig *sc, bool generateDefaultsIfMissing) {
         return false;
     }
 
-    sc->adxl.ntsp_xmeas   = doc["ADXL"].as<JsonObject>()["NTSPX"];
-    sc->adxl.ntsp_ymeas   = doc["ADXL"].as<JsonObject>()["NTSPY"];
-    sc->adxl.ntsp_zmeas   = doc["ADXL"].as<JsonObject>()["NTSPZ"];
+    sc->adxl.ofx          = doc["ADXL"].as<JsonObject>()["OFX"];
+    sc->adxl.ofy          = doc["ADXL"].as<JsonObject>()["OFY"];
+    sc->adxl.ofz          = doc["ADXL"].as<JsonObject>()["OFZ"];
     sc->wifi.enabled      = doc["WiFi"].as<JsonObject>()["Enabled"];
     sc->wifi.ssid         = doc["WiFi"].as<JsonObject>()["SSID"].as<String>();
     sc->wifi.pswd         = doc["WiFi"].as<JsonObject>()["PSWD"].as<String>();
@@ -141,7 +141,7 @@ bool getSettingsConfig(SettingsConfig *sc, bool generateDefaultsIfMissing) {
     // we should check if any of these are null
     // and throw something up, maybe overwrite the existing config.
     // range validation is up to the individual task.
-    
+
     file.close();
     SD.end();
 
@@ -149,9 +149,9 @@ bool getSettingsConfig(SettingsConfig *sc, bool generateDefaultsIfMissing) {
 }
 
 void printSettingsConfig(const SettingsConfig &sc) {
-    debugf("x: %d\n", sc.adxl.ntsp_xmeas);
-    debugf("y: %d\n", sc.adxl.ntsp_ymeas);
-    debugf("z: %d\n", sc.adxl.ntsp_zmeas);
+    debugf("x: %d\n", sc.adxl.ofx);
+    debugf("y: %d\n", sc.adxl.ofy);
+    debugf("z: %d\n", sc.adxl.ofz);
     debugf("w: %s\n", sc.wifi.enabled ? "TRUE" : "FALSE");
     debugf("u: %s\n", sc.wifi.ssid.c_str());
     debugf("p: %s\n", sc.wifi.pswd.c_str());
