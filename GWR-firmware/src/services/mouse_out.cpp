@@ -40,7 +40,7 @@ void task_mouse(void *pv) {
         static const uint32_t REPORT_FREQUENCY = 100;  // HZ
         // static const uint32_t DPI              = 800;  // for inches per second calcuations
         // static const double INCH_PER_SEC_MAX   = 4.0;  // under 1g
-        static const int DOTS_PER_TICK_MAX = (settings.hid.mouseSense) / REPORT_FREQUENCY;
+        int DOTS_PER_TICK_MAX = (settings.hid.mouseSense) / REPORT_FREQUENCY;
 
         double x, y, z;
         x = g_accelEvent.x * g;
