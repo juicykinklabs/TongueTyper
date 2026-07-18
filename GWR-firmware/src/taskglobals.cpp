@@ -41,11 +41,17 @@ void initTaskGlobals() {
     // our entry point in setup()
     DEVICE_MODE = INITIALIZING;
 
+    g_accelEvent.x = 0;
+    g_accelEvent.y = 0;
+    g_accelEvent.z = 0;
+
+    g_wifiReady = false;
+
     Serial.begin(BAUDRATE_ESP32);
     Keyboard.begin();
     Mouse.begin();
     bool usbsuccess = USB.begin();
-    vTaskDelay(max(3000, SERIAL_CONNECT_DELAY)); // "composite enumeration delay" for computer to realize theres a usb device
+    vTaskDelay(max(COMPOSITE_ENUMERATION_DELAY, SERIAL_CONNECT_DELAY));
 
     // we may access serial printing below this point
 
@@ -54,28 +60,27 @@ void initTaskGlobals() {
     } else {
         debuglnF("USB attached");
     }
- 
+
     Mutexes::SPI       = xSemaphoreCreateMutex();
     Mutexes::USBPORT   = xSemaphoreCreateMutex();
     Mutexes::AccelData = xSemaphoreCreateMutex();
-    Mutexes::SDCard    = xSemaphoreCreateMutex();
+    Mutexes::SDCard    = xSemaphoreCreateMutex(); // you must take the SPI mutex before and in addition to the SDCard Mutex.
 
     // queues
-    q_userinput   = xQueueCreate(4, sizeof(UserInputMessage));
+    q_userinput   = xQueueCreate(8, sizeof(UserInputMessage));
     q_mouseclicks = xQueueCreate(8, sizeof(MouseclickMessage));
     q_sfx_tts     = xQueueCreate(10, sizeof(AudioMessage));
-    q_display     = xQueueCreate(3, sizeof(DisplayMessage));
+    q_display     = xQueueCreate(16, sizeof(DisplayMessage));
     q_haptic      = xQueueCreate(2, sizeof(HapticMessage));
   
-    if (!getSettingsConfig(&settings, true)) {
-        createDefaultSettingsConfig(true);
+    if (!getSettingsConfig(&settings)) {
+        #ifdef VERSION_DEV
+        debuglnF("wanting to overwriting settings file!");
+        vTaskDelay(1000);
+        //createDefaultSettingsConfig(true);
+        #endif
     }
-    printSettingsConfig(settings);
+    //printSettingsConfig(settings);
 
-    g_accelEvent.x = 0;
-    g_accelEvent.y = 0;
-    g_accelEvent.z = 0;
-
-    g_wifiReady = false;
     debuglnF("Init complete");
 }

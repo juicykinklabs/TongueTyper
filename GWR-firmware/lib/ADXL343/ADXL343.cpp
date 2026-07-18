@@ -34,8 +34,8 @@ bool ADXL343::init(uint32_t spi_bus_clock) {
 void ADXL343::writeRegister(uint8_t reg, uint8_t value) {
     uint8_t buffer[2] = {reg, value};
     SPI.beginTransaction(SPISettings(_spiclock, MSBFIRST, SPI_MODE3));
+    delayMicroseconds(10);
     digitalWrite(_cs, LOW);
-    NOP();
     SPI.transfer(buffer, 2);
     digitalWrite(_cs, HIGH);
     SPI.endTransaction();
@@ -44,8 +44,8 @@ void ADXL343::writeRegister(uint8_t reg, uint8_t value) {
 uint8_t ADXL343::readRegister(uint8_t reg) {
     uint8_t buffer[2] = {uint8_t(reg | 0x80), uint8_t(0xFF)};
     SPI.beginTransaction(SPISettings(_spiclock, MSBFIRST, SPI_MODE3));
+    delayMicroseconds(10);
     digitalWrite(_cs, LOW);
-    NOP();
     SPI.transfer(buffer, 2); // 1 byte address, 1 byte return
     digitalWrite(_cs, HIGH);
     SPI.endTransaction();
@@ -82,7 +82,9 @@ void ADXL343::getAccelerationRaw(int16_t *x, int16_t *y, int16_t *z) {
     SPI.end();
     SPI.begin(_sck, _miso, _mosi);
     SPI.beginTransaction(SPISettings(_spiclock, MSBFIRST, SPI_MODE3));
+    delayMicroseconds(10);
     digitalWrite(_cs, LOW);
+    delayMicroseconds(2);
     SPI.transfer(buffer, 7); // address + 6 data bytes
     digitalWrite(_cs, HIGH);
     SPI.endTransaction();
@@ -95,7 +97,7 @@ void ADXL343::getAccelerationRaw(int16_t *x, int16_t *y, int16_t *z) {
 void ADXL343::getAcceleration(double *x, double *y, double *z) {
     // acceleration in Gs
     // when Vs = 2.5, 256 LSB/g
-    
+
     int16_t xraw, yraw, zraw;
     getAccelerationRaw(&xraw, &yraw, &zraw);
 

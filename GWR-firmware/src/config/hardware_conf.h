@@ -87,7 +87,7 @@ namespace Pins {
         constexpr uint8_t INT1 = GPIO_NUM_12;
     } // namespace XL
     namespace ADC {
-        constexpr uint8_t VBAT = GPIO_NUM_10;
+        constexpr uint8_t VBAT = GPIO_NUM_10; // aka BATT_VOLT_PIN
     }
 #else
 #endif
@@ -118,7 +118,7 @@ namespace Buttons {
 // interface speeds
 
 namespace SPISpeed {
-    constexpr uint32_t TFT = 40000000;
+    constexpr uint32_t TFT = 25000000;
     constexpr uint32_t SD  = 25000000;
     constexpr uint32_t EXP = 5000000;
     constexpr uint32_t XL  = 1000000;

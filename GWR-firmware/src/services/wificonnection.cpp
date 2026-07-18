@@ -12,10 +12,13 @@ void task_wificonnection(void *pv) {
     static bool firstTimeConnect = false;
     debuglnF("reading wifi settings");
     if (settings.wifi.enabled) {
-        debugf("SSID: %c%c****\n",settings.wifi.ssid.c_str()[0], settings.wifi.ssid.c_str()[1]);
-        debugf("PSWD: %c%c****\n",settings.wifi.pswd.c_str()[0], settings.wifi.pswd.c_str()[1]);
+        debugf("SSID: %c%c****\n", settings.wifi.ssid.c_str()[0], settings.wifi.ssid.c_str()[1]);
+        debugf("PSWD: %c%c****\n", settings.wifi.pswd.c_str()[0], settings.wifi.pswd.c_str()[1]);
     } else {
         debugln("WiFi disabled");
+
+        WiFi.disconnect(true);
+        WiFi.mode(WIFI_OFF); // todo verify these lines are in the right order
     }
 
     if (!strcasecmp(settings.wifi.ssid.c_str(), "myPassword")) {
@@ -31,7 +34,7 @@ void task_wificonnection(void *pv) {
                     // improvwifi(); or something. it must update the settings object, and save to SD card
                     firstTimeConnect = false;
                 }
-                WiFi.setHostname(WIRELESS::hostname); 
+                WiFi.setHostname(WIRELESS::hostname);
                 WiFi.mode(WIFI_STA);
                 WiFi.begin(settings.wifi.ssid.c_str(), settings.wifi.pswd.c_str());
                 uint32_t t_tryConnectStart = millis();
@@ -46,10 +49,19 @@ void task_wificonnection(void *pv) {
                 if (firstTimeConnect) {
                     continue;
                 } else {
-                    debuglnF("wifi connected");
-                    debugln(WiFi.localIP());
-                    debugln(WiFi.RSSI());
+                    debuglnF("WiFi connected");
+                    debugf("DHCP: %s | RSSI: %ddbm\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
                     g_wifiReady = true;
+
+                    // we are connected; let's get the current time while we're at it (no timezone or offset yet)
+                    configTime(0, 0, "pool.ntp.org");
+                    struct tm timeinfo;
+                    while (!getLocalTime(&timeinfo)) {
+                        vTaskDelay(100);
+                    }
+                    char buf[64];
+                    strftime(buf, 63, "%A, %B %d %Y %H:%M:%S", &timeinfo);
+                    debugln(buf);
                 }
             }
         }
