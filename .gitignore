@@ -1,4 +1,6 @@
 TT-models/scratch/*
+SD-Media/MockFS/usermedia/images/*
+SD-Media/MockFS/usermedia/sounds/*
 ~$*.xlsx
 GWR.code-workspace
 /business
