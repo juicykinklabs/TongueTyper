@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>TongueTyper Web UI</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="spacer"></div>
+    <div class="container">
+      <div class="category open">
+        <div class="category-header">
+          <span>Change Mode</span>
+          <span class="chevron">▶</span>
+        </div>
+        <div class="category-body">
+          <div class="buttons">
+            <button class="large_button" data-method="GET" data-url="/api/mode1">Standard</button>
+            <button class="large_button" data-method="GET" data-url="/api/mode2">Gaming</button>
+            <button class="large_button" data-method="GET" data-url="/api/mode3">AudioVisual</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="category open">
+        <div class="category-header">
+          <span>Controls</span>
+          <span class="chevron">▶</span>
+        </div>
+        <div class="category-body">
+          <div class="buttons">
+            <button class="large_button" data-method="GET" data-url="/api/vibrate">Vibrate</button>
+          </div>
+          <div class="form-fields">
+            <label class="field color-field">
+              <span class="field-label">
+                LED Color
+                <span class="field-value" id="color-value">#667eea</span>
+              </span>
+              <input type="color" id="color-input" value="#667eea" data-url="/api/color" />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="category open">
+        <div class="category-header">
+          <span>Preferences</span>
+          <span class="chevron">▶</span>
+        </div>
+        <div class="category-body">
+          <div class="form-fields">
+            <label class="field-row">
+              <label class="field">
+                <span class="field-label">
+                  Display Brightness
+                  <span class="field-value" id="slider-value">100</span>
+                </span>
+                <input
+                  type="range"
+                  data-key="Brightness"
+                  id="slider-input"
+                  min="10"
+                  max="100"
+                  value="100"
+                />
+              </label>
+              <label class="field checkbox-field">
+                <input type="checkbox" class="input" data-key="InvertColors" id="checkbox-input" />
+                <span class="custom-checkbox"></span>
+                <span class="field-label">Invert</span>
+              </label>
+            </label>
+
+            <label class="field-row">
+              <label class="field">
+                <span class="field-label">
+                  Volume
+                  <span class="field-value" id="slider-value">75</span>
+                </span>
+                <input
+                  type="range"
+                  data-key="Volume"
+                  id="slider-input"
+                  min="0"
+                  max="100"
+                  value="75"
+                />
+              </label>
+              <label class="field checkbox-field">
+                <input type="checkbox" class="input" data-key="Announce" id="checkbox-input" />
+                <span class="custom-checkbox"></span>
+                <span class="field-label">TTS</span>
+              </label>
+            </label>
+
+            <label class="field">
+              <span class="field-label">
+                Haptic Strength
+                <span class="field-value" id="slider-value">100</span>
+              </span>
+              <input
+                type="range"
+                data-key="HapticStrength"
+                id="slider-input"
+                min="0"
+                max="100"
+                value="75"
+              />
+            </label>
+
+            <label class="field">
+              <span class="field-label">
+                Mouse Sensitivity
+                <span class="field-value" id="slider-value">1200</span>
+              </span>
+              <input
+                type="range"
+                data-key="MouseSensitivity"
+                id="slider-input"
+                min="400"
+                max="3000"
+                value="1200"
+              />
+            </label>
+
+            <button class="small_button" id="form-submit" data-method="POST" data-url="/api/setform">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="category open">
+        <div class="category-header">
+          <span>Sensors</span>
+          <span class="chevron">▶</span>
+        </div>
+        <div class="category-body">
+          <div class="sensor-panel-wrapper">
+            <span class="sensor-status" id="sensor-status">Connecting…</span>
+            <div class="sensor-panel" id="sensor-panel"></div>
+          </div>
+        </div>
+      </div>
+      
+
+      <div class="output-label">Debug Response</div>
+      <div id="output">...</div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
