@@ -46,11 +46,14 @@ def indexHTMLtoCPP() -> bool:
         StylesText : str = StylesFile.read()
         ScriptText : str = ScriptFile.read()
 
-        print(f"index.html: {len(IndexText)} bytes")
-        print(f"styles.css: {len(StylesText)} bytes")
-        print(f"script.js: {len(ScriptText)} bytes")
+        print(f"\tindex.html: {len(IndexText)} bytes")
+        print(f"\tstyles.css: {len(StylesText)} bytes")
+        print(f"\tscript.js: {len(ScriptText)} bytes")
         bytesTotal = len(IndexText) + len(StylesText) + len(ScriptText)
-        print(f"{bytesTotal} bytes total ({bytesTotal * 100 / 8000000 :.1f}% flash)") # todo get flash size from pio config
+        
+        # todo get flash size from pio partition config
+        # XIAO_ESP32S3_Plus.upload.maximum_data_size
+        print(f"\tWebsite hosting uses {bytesTotal} bytes total, ({bytesTotal * 100 / 3342336 :.1f}% flash partition)") 
 
         IndexFile.close()
         StylesFile.close()
