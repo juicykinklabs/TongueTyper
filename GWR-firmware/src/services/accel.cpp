@@ -15,13 +15,18 @@ void task_accel(void *pv) {
     
     // setup
     if (xSemaphoreTake(Mutexes::SPI, (TickType_t) 10) == pdTRUE) {
-
+        uint32_t failcount = 0;
         bool success = accel.init();
-        while (!success) {
+        while (!success && (failcount < 3)) {
             debugln("adxl init fail");
             Serial.flush();
             vTaskDelay(500 / portTICK_PERIOD_MS);
             success = accel.init();
+            failcount++;
+        }
+        if (!success) {
+            xSemaphoreGive(Mutexes::SPI);
+            vTaskDelete(NULL);
         }
 
         accel.setRange(ADXL343_RANGE_4_G);

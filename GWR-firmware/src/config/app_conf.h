@@ -9,7 +9,7 @@
 
 #define BAUDRATE_ESP32 (115200)
 #define SERIAL_CONNECT_DELAY (2000) // ms
-
+#define COMPOSITE_ENUMERATION_DELAY (3000) // ms, Windows
 // todo: could we use ESP_LOGD format for consistent formatting across serial as well as log files?
 // todo: use a message queue and have one task for serial printing
 inline void timestamp() { Serial.printf("[%8u.%03u] ", millis(), micros() % 1000UL);}

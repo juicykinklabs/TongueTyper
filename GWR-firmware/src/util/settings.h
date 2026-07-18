@@ -1,11 +1,15 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
+
 #include "config/hardware_conf.h"
 #include "structs/SettingsConfig.h"
 
-bool writeSettingsConfig(const SettingsConfig& sc);
+bool writeSettingsConfigFromJson(const JsonDocument &jdoc);
+bool writeSettingsConfig(const SettingsConfig &sc);
 void deleteSettingsConfig();
 void createDefaultSettingsConfig(bool overWriteExisting = false);
-bool getSettingsConfig(SettingsConfig * sc, bool generateDefaultsIfMissing = true);
+bool getSettingsConfigAsJson(JsonDocument &jdoc, bool regenerate = false);
+bool getSettingsConfig(SettingsConfig *sc, bool regenerate = false);
 void printSettingsConfig(const SettingsConfig &sc);

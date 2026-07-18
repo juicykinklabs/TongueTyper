@@ -7,14 +7,31 @@
 #include "config/app_conf.h"
 #include "config/constants.h"
 
-bool writeSettingsConfig(const SettingsConfig &sc) {
+#include "taskglobals.h"
+
+bool writeSettingsConfigFromJson(const JsonDocument &jdoc) {
     SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
-    // todo check if begin was ok
+    // todo check if SD.begin was ok
     SD.remove(FSPATH::Settings);
-    JsonDocument doc;
 
     File file = SD.open(FSPATH::Settings, FILE_WRITE);
     // todo check if file is ok
+
+    if (serializeJsonPretty(jdoc, file) == 0) {
+        debuglnF("Failed to write to file");
+        file.close();
+        SD.end();
+        return false;
+    }
+
+    // Close the file
+    file.close();
+    SD.end();
+    return true;
+}
+
+bool writeSettingsConfig(const SettingsConfig &sc) {
+    JsonDocument doc;
 
     doc["ADXL"]["OFX"]             = sc.adxl.ofx;
     doc["ADXL"]["OFY"]             = sc.adxl.ofy;
@@ -33,20 +50,12 @@ bool writeSettingsConfig(const SettingsConfig &sc) {
     doc["Haptics"]["Pattern"]      = sc.haptic.pattern;
     doc["HID"]["MouseSensitivity"] = sc.hid.mouseSense;
 
-    if (serializeJsonPretty(doc, file) == 0) {
-        debuglnF("Failed to write to file");
-        return false;
-    }
-
-    // Close the file
-    file.close();
-    SD.end();
-    return true;
+    return writeSettingsConfigFromJson(doc);
 }
 
 void deleteSettingsConfig() {
     SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
-    // todo check if begin ok
+    // todo check if begin ok, also take semaphore
     SD.remove(FSPATH::Settings);
     SD.end();
 }
@@ -91,35 +100,57 @@ void createDefaultSettingsConfig(bool overWriteExisting) {
     }
 }
 
-bool getSettingsConfig(SettingsConfig *sc, bool generateDefaultsIfMissing) {
-    bool ret = true;
-    SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
-    // todo check if begin was ok
-    File file = SD.open(FSPATH::Settings);
-    // todo: check if(file)
-    if (!file) {
-        ret = false;
-        debuglnF("getSettingsConfig: problem with file");
-        if (generateDefaultsIfMissing) {
+bool getSettingsConfigAsJson(JsonDocument &jdoc, bool regenerate) {
+    if (regenerate) {
+        bool success = getSettingsConfigAsJson(jdoc, false);
+        if (!success) {
             debuglnF("settings.json corrupted or missing, force regenerating");
-            file.close();
-            SD.end();
-
             createDefaultSettingsConfig(true);
-            ret = getSettingsConfig(sc, false); // recurse once, child wont reach this line
+            return getSettingsConfigAsJson(jdoc, false);
         }
-        return ret;
-    }
+        return true;
+    } else {
+        if (xSemaphoreTake(Mutexes::SPI, (TickType_t) 500)) {
+            if (xSemaphoreTake(Mutexes::SDCard, (TickType_t) 500)) {
+                bool success = SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
+                if (!success) {
+                    debuglnF("getSettingsConfigAsJson: SD begin failure");
+                    return false;
+                }
+                File file = SD.open(FSPATH::Settings);
+                if (!file) {
+                    debuglnF("getSettingsConfigAsJson: problem with file");
+                    SD.end();
+                    xSemaphoreGive(Mutexes::SPI);
+                    xSemaphoreGive(Mutexes::SDCard);
+                    return false;
+                }
 
-    JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, file);
-    if (error) {
-        debugF("deserializeJson() failed: ");
-        debugln(error.f_str());
-        file.close();
-        SD.end();
-        return false;
+                DeserializationError error = deserializeJson(jdoc, file);
+                if (error) {
+                    debugF("deserializeJson() failed: ");
+                    debugln(error.f_str());
+                }
+                file.close();
+                SD.end();
+                xSemaphoreGive(Mutexes::SPI);
+                xSemaphoreGive(Mutexes::SDCard);
+                return !error;
+            } else {
+                xSemaphoreGive(Mutexes::SPI);
+                debuglnF("sd semaphore problem");
+                return false;
+            }
+        } else {
+            debuglnF("spi semaphore problem");
+            return false;
+        }
     }
+}
+
+bool getSettingsConfig(SettingsConfig *sc, bool regenerate) {
+    JsonDocument doc;
+    bool success = getSettingsConfigAsJson(doc, regenerate);
 
     sc->adxl.ofx          = doc["ADXL"].as<JsonObject>()["OFX"];
     sc->adxl.ofy          = doc["ADXL"].as<JsonObject>()["OFY"];
@@ -139,13 +170,10 @@ bool getSettingsConfig(SettingsConfig *sc, bool generateDefaultsIfMissing) {
     sc->hid.mouseSense    = doc["HID"].as<JsonObject>()["MouseSensitivity"];
 
     // we should check if any of these are null
-    // and throw something up, maybe overwrite the existing config.
-    // range validation is up to the individual task.
+    // and throw something up, maybe even overwrite the existing config.
+    // but range validation is up to the individual task.
 
-    file.close();
-    SD.end();
-
-    return true;
+    return success;
 }
 
 void printSettingsConfig(const SettingsConfig &sc) {

@@ -1,10 +1,9 @@
-#include "heartbeat.h"
+#pragma once
 
 #include <Arduino.h>
-
 #include "config/app_conf.h"
 
-void do_heartbeat(void *pv)
+inline void do_heartbeat(void *pv)
 {
     pinMode(LED_BUILTIN, OUTPUT);
     static bool led_state = LOW; 

@@ -31,25 +31,27 @@ void task_displayImageOrText(void *pv) {
     // recv path from a queue,
     // put that image on the tft display
 
-    Adafruit_GC9A01A tft(Pins::TFT::CS, Pins::TFT::DC); // resets will be done manually
+    Adafruit_GC9A01A tft(Pins::TFT::CS, Pins::TFT::DC, Pins::TFT::RST);
     SdSpiConfig sdConfig(Pins::SD::CS, SHARED_SPI, SPISpeed::SD, &SPI);
     SdFat32 SD_as_FAT32;
     Adafruit_ImageReader reader(SD_as_FAT32);
-
-    tft.begin(SPISpeed::TFT);
+    if (xSemaphoreTake(Mutexes::SPI, portMAX_DELAY) == pdTRUE) {
+        SPI.end();
+        SPI.begin(Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
+        tft.begin(SPISpeed::TFT);
 
 #ifdef PCB_REVISION
 #if PCB_REVISION >= 1
-    pinMode(Pins::TFT::RST, OUTPUT);
-    pinMode(Pins::TFT::BL, OUTPUT);
-    digitalWrite(Pins::TFT::RST, LOW);
-    vTaskDelay(500);
-    digitalWrite(Pins::TFT::RST, HIGH);
+        pinMode(Pins::TFT::BL, OUTPUT);
 #endif
 #endif
-
-    setTFTBrightness(0);
-    tft.fillScreen(GC9A01A_BLACK);
+        setTFTBrightness(0);
+        tft.fillScreen(GC9A01A_BLACK);
+        xSemaphoreGive(Mutexes::SPI);
+    } else {
+        // couldn't secure the SPI bus
+        vTaskDelete(NULL);
+    }
 
     DisplayMessage cmd;
 
@@ -57,10 +59,17 @@ void task_displayImageOrText(void *pv) {
 
         if (xQueueReceive(q_display, (void *) &cmd, portMAX_DELAY)) {
             debugln("display recv");
-
-            tft.begin(SPISpeed::TFT); // untraceable crashes without this reinitialization.
+            debugln(cmd.data);
+            
+            // tft.begin(SPISpeed::TFT); // sometimes untraceably crashes without this reinitialization.
+                                      // and when it doesn't, the display is dark.
                                       // probably SPI timers being clobbered?
-            tft.setRotation(1);       // todo change to tft.setRotation(3);
+                                      // this sends a software reset, but we don't want it to send any reset at all..
+            
+            // SPI.begin(Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
+            // SPI.setFrequency(SPISpeed::TFT);
+            
+            //tft.setRotation(3); 
 
             if (cmd.inst == DisplayInstruction::JUST_CLEAR) {
                 tft.fillScreen(GC9A01A_BLACK);
@@ -68,7 +77,11 @@ void task_displayImageOrText(void *pv) {
                 debuglnF("cleared screen");
             } else if (cmd.inst == DisplayInstruction::DRAW_IMAGE) {
                 debugln("DRAW IMAGE");
-                setTFTBrightness(0); // black out the display before drawing next image
+                //setTFTBrightness(0); // black out the display before drawing next image
+
+                SPI.end();
+                SPI.begin(Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
+                digitalWrite(Pins::TFT::CS, HIGH); // why is it not doing this for me
 
                 bool success = SD_as_FAT32.begin(sdConfig);
                 if (!success) {
@@ -186,9 +199,13 @@ void task_displayImageOrText(void *pv) {
                 centeredY = y_offset_subtitle + (h + 2) + tft.height() / 2 - (y1 + h / 2); // add additional pixels (h+2)
                 tft.setCursor(centeredX, centeredY);
                 tft.print(subtitleLine2);
+
+                // make sure the drawing is visible, in case some other mode
+                // changed the brightness,
+                setTFTBrightness(settings.disp.brightness); 
             }
         }
         vTaskDelay(1);
     }
-    vTaskDelete(NULL); // <-- bitch
+    vTaskDelete(NULL);
 }
