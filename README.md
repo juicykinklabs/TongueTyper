@@ -2,6 +2,10 @@
 
 A reinvented talking-gag platform with WiFi control, USB output, accelerometer, speaker, and haptic feedback.
 
+## ⚠️ Pre-release
+This repo is still missing a lot of documentation, and there are no releases at this time.
+Feel free to take a look around though.
+
 ## Directory
 
  - GWR-firmware: ESP32-S3 firmware (platformio, arduinoespressif32)
