@@ -115,6 +115,8 @@ bool getSettingsConfigAsJson(JsonDocument &jdoc, bool regenerate) {
                 bool success = SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
                 if (!success) {
                     debuglnF("getSettingsConfigAsJson: SD begin failure");
+                    xSemaphoreGive(Mutexes::SPI);
+                    xSemaphoreGive(Mutexes::SDCard);
                     return false;
                 }
                 File file = SD.open(FSPATH::Settings);
@@ -133,12 +135,12 @@ bool getSettingsConfigAsJson(JsonDocument &jdoc, bool regenerate) {
                 }
                 file.close();
                 SD.end();
-                xSemaphoreGive(Mutexes::SPI);
                 xSemaphoreGive(Mutexes::SDCard);
+                xSemaphoreGive(Mutexes::SPI);
                 return !error;
             } else {
-                xSemaphoreGive(Mutexes::SPI);
                 debuglnF("sd semaphore problem");
+                xSemaphoreGive(Mutexes::SPI);
                 return false;
             }
         } else {
