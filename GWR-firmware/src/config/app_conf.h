@@ -19,11 +19,12 @@ inline void debugPoorMansBreakPoint() {Serial.println("..."); while(!Serial.avai
 
 #ifdef VERSION_DEV
 #define debugStart() Serial.begin(BAUDRATE_ESP32);
-#define debug(...) timestamp(); Serial.print(__VA_ARGS__); // Serial.flush()
-#define debugln(...) timestamp(); Serial.println(__VA_ARGS__); // Serial.flush()
-#define debugf(...) timestamp(); Serial.printf(__VA_ARGS__); // Serial.flush()
-#define debugF(...) timestampF(); Serial.print(F(__VA_ARGS__)); // Serial.flush()
-#define debuglnF(...) timestampF(); Serial.println(F(__VA_ARGS__)); // Serial.flush()
+
+#define debug(...) {timestamp(); Serial.print(__VA_ARGS__);}
+#define debugln(...) {timestamp(); Serial.println(__VA_ARGS__);}
+#define debugf(...) {timestamp(); Serial.printf(__VA_ARGS__);}
+#define debugF(...) {timestampF(); Serial.print(F(__VA_ARGS__));}
+#define debuglnF(...) {timestampF(); Serial.println(F(__VA_ARGS__));}
 
 #else
 
