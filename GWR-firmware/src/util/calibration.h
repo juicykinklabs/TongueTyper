@@ -20,7 +20,7 @@
 inline void performNTSP() {
     debuglnF("Starting calibration");
     debuglnF("Ensure device is laying flat in Z_+1g field");
-    ADXL343 accel_cal(Pins::XL::CS, Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
+    ADXL343 accel_cal(Pins::ACCEL::CS, Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
 
     if (xSemaphoreTake(Mutexes::SPI, (TickType_t) 50) == pdTRUE) {
 

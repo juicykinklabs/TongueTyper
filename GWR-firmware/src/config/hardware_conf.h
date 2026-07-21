@@ -50,7 +50,7 @@ namespace Pins {
     namespace SD {
         constexpr uint8_t CS = D4;
     }
-    namespace XL {
+    namespace ACCEL {
         constexpr uint8_t CS = D5;
     }
 #elif PCB_REVISION == 1
@@ -82,10 +82,10 @@ namespace Pins {
     namespace SD {
         constexpr uint8_t CS = GPIO_NUM_6;
     }
-    namespace XL {
+    namespace ACCEL {
         constexpr uint8_t CS   = GPIO_NUM_11;
         constexpr uint8_t INT1 = GPIO_NUM_12;
-    } // namespace XL
+    } // namespace ACCEL
     namespace ADC {
         constexpr uint8_t VBAT = GPIO_NUM_10; // aka BATT_VOLT_PIN
     }
@@ -125,7 +125,7 @@ namespace SPISpeed {
     constexpr uint32_t SD = 25000000;
 #endif
     constexpr uint32_t EXP = 5000000;
-    constexpr uint32_t XL  = 1000000;
+    constexpr uint32_t ACCEL  = 1000000;
 } // namespace SPISpeed
 
 // hardware values, like resistors, gains

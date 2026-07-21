@@ -8,15 +8,15 @@
 #include "structs/AccelEvent.h"
 #include "taskglobals.h"
 
-ADXL343 accel(Pins::XL::CS, Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
+ADXL343 accel(Pins::ACCEL::CS, Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
 
 void task_accel(void *pv) {
     static bool printOnNextMutexFail = true;
     
     // setup
-    if (xSemaphoreTake(Mutexes::SPI, (TickType_t) 10) == pdTRUE) {
+    if (xSemaphoreTake(Mutexes::SPI, portMAX_DELAY) == pdTRUE) {
         uint32_t failcount = 0;
-        bool success = accel.init();
+        bool success = accel.init(SPISpeed::ACCEL);
         while (!success && (failcount < 3)) {
             debugln("adxl init fail");
             Serial.flush();
