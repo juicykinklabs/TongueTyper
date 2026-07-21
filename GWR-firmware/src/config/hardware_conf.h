@@ -119,7 +119,11 @@ namespace Buttons {
 
 namespace SPISpeed {
     constexpr uint32_t TFT = 25000000;
-    constexpr uint32_t SD  = 25000000;
+#ifdef SLOW_SD_CARD
+    constexpr uint32_t SD = 5000000;
+#else
+    constexpr uint32_t SD = 25000000;
+#endif
     constexpr uint32_t EXP = 5000000;
     constexpr uint32_t XL  = 1000000;
 } // namespace SPISpeed
