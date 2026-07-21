@@ -45,5 +45,9 @@ extern SettingsConfig settings;
 extern AccelEvent g_accelEvent;
 extern bool g_wifiReady;
 
-
+/**
+ * @brief System initialization and global variable initialization routine
+ * 
+ * @details Starts USB devices, settings objects, as well as our semaphores and queues
+ */
 void initTaskGlobals();

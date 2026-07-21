@@ -3,6 +3,15 @@
 #include <Arduino.h>
 #include "config/app_conf.h"
 
+
+/**
+ * @brief Onboard LED heartbeat service
+ * 
+ * @details Blinks the development board's built-in LED with a 50% 
+ *          duty cycle at a rate of HEARTBEAT_FREQUENCY hertz
+ * 
+ * @param pv Not used
+ */
 inline void do_heartbeat(void *pv)
 {
     pinMode(LED_BUILTIN, OUTPUT);
