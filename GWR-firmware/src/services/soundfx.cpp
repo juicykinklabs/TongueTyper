@@ -40,9 +40,11 @@ void task_soundfx(void *pv) {
             audio.setVolume(volumeToVolume(settings.sfx.volume));
             debugf("set volume to %d\n", volumeToVolume(settings.sfx.volume));
             bool connectionSuccess = false;
-            switch (thisAudioEvent.type) {
+            switch (thisAudioEvent.instruction) {
                 case AudioEventEnum::SFX: {
-                    SD.begin(Pins::SD::CS); // todo semamphore
+                    SPI.end();
+                    SPI.begin(Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
+                    SD.begin(Pins::SD::CS, SPI, SPISpeed::SD); // todo semamphore
                     connectionSuccess = audio.connecttoFS(SD, thisAudioEvent.data);
                     audioLoopToCompletion();
                     SD.end();

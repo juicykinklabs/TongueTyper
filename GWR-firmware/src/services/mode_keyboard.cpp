@@ -215,7 +215,7 @@ void task_mode_keyboard(void *pv) {
                                 AudioMessage myAudioEvent;
                                 // the queue receiver will deallocate this for us. probably.
                                 strcpy(myAudioEvent.data, fname.c_str());
-                                myAudioEvent.type = AudioEventEnum::SFX;
+                                myAudioEvent.instruction = AudioEventEnum::SFX;
                                 xQueueSend(q_sfx_tts, (void *) &myAudioEvent, (TickType_t) 0);
                                 // audio event string could go out of scope here
                                 break;

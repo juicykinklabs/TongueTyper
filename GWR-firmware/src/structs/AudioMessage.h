@@ -10,6 +10,6 @@ enum AudioEventEnum {
 };
 
 typedef struct AudioMessage {
-    AudioEventEnum type; // sfx or tts
+    AudioEventEnum instruction; // sfx or tts
     char data[AUDIOMESSAGE_DATA_SZ]; // a filename or tts phrase
 } AudioMessage;

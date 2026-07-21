@@ -11,6 +11,6 @@ enum DisplayInstruction {
 };
 
 typedef struct DisplayMessage {
-    DisplayInstruction inst;
+    DisplayInstruction instruction;
     char data[DISPLAYMESSAGE_DATA_SZ]; // may be a string to show or a file path to an image
 } DisplayMessage;

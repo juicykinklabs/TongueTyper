@@ -76,11 +76,11 @@ void task_displayImageOrText(void *pv) {
                 tft.begin(SPISpeed::TFT); // still crashing without this line when going from displaying images to displaying text
                 tft.setRotation(3);
 
-                if (cmd.inst == DisplayInstruction::JUST_CLEAR) {
+                if (cmd.instruction == DisplayInstruction::JUST_CLEAR) {
                     tft.fillScreen(GC9A01A_BLACK);
                     setTFTBrightness(0);
                     debuglnF("cleared screen");
-                } else if (cmd.inst == DisplayInstruction::DRAW_IMAGE) {
+                } else if (cmd.instruction == DisplayInstruction::DRAW_IMAGE) {
                     debugln("DRAW IMAGE");
                     // setTFTBrightness(0); // black out the display before drawing next image
                     if (xSemaphoreTake(Mutexes::SDCard, (TickType_t) 500) == pdTRUE) {
@@ -104,7 +104,7 @@ void task_displayImageOrText(void *pv) {
                     } else {
                         debugln("no semaphore in time");
                     }
-                } else if (cmd.inst == DisplayInstruction::SHOW_STRING) {
+                } else if (cmd.instruction == DisplayInstruction::SHOW_STRING) {
                     // we receive a string from the main task. the last character
                     // is shown big in the middle, and subtitles are shown with
                     // as many 'previous' characters as will fit on the display.

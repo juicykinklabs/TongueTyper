@@ -51,7 +51,7 @@ void api_mode3() {
 void api_queueAudio() {
     // deserialize some json, create an audio message for the queue, and send
     //AudioMessage am;
-    //am.type = AudioEventEnum::TTS;
+    //am.instruction = AudioEventEnum::TTS;
     //strncpy(am.data, .....); 
 //
     //xQueueSend(q_sfx_tts, (void*) &am, (TickType_t) 0);
