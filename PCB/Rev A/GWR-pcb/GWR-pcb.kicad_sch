@@ -6761,16 +6761,6 @@
 		)
 		(uuid "21f6f73d-47c6-4224-b57a-45c6fade6936")
 	)
-	(text "SPI ctrl byte\n0 1 0 0 A2 A1 A0 RW\n(0100000X)\ncan disable and just use CS with HAEN bit =0"
-		(exclude_from_sim no)
-		(at 240.03 67.056 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "2b3baa2e-95c6-4010-863f-10b9997e463d")
-	)
 	(text "0805"
 		(exclude_from_sim no)
 		(at 134.112 189.484 0)

@@ -2,4 +2,4 @@
 *.lck
 .history
 *.step
-fabrication_outputs/*
+fp-lib-table
