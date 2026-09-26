@@ -78,7 +78,7 @@ constexpr uint8_t keyboard_map[][KEYBOARDMAP_WIDTH] = {
     {Buttons::LFAR,  Buttons::FREN,  '2'          },
     {Buttons::LFAR,  Buttons::SHAFT, '3'          },
     {Buttons::LFAR,  Buttons::LNEAR, '4'          },
-    {Buttons::LFAR,  Buttons::RNEAR, 0U          },
+    {Buttons::LFAR,  Buttons::RNEAR, 0U           },
     {Buttons::LFAR,  Buttons::LFAR,  0U           },
     {Buttons::LFAR,  Buttons::RFAR,  0U           },
 
@@ -86,7 +86,7 @@ constexpr uint8_t keyboard_map[][KEYBOARDMAP_WIDTH] = {
     {Buttons::RFAR,  Buttons::FREN,  '8'          },
     {Buttons::RFAR,  Buttons::SHAFT, '7'          },
     {Buttons::RFAR,  Buttons::LNEAR, '6'          },
-    {Buttons::RFAR,  Buttons::RNEAR, '5'           },
+    {Buttons::RFAR,  Buttons::RNEAR, '5'          },
     {Buttons::RFAR,  Buttons::LFAR,  0U           },
     {Buttons::RFAR,  Buttons::RFAR,  '0'          },
 };
