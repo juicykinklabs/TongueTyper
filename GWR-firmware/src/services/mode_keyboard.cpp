@@ -9,23 +9,14 @@
 #include "taskglobals.h"
 
 void task_mode_keyboard(void *pv) {
-    // "keyboard" / og gagwriter
-    // USB handling setup code goes here:
-    //Keyboard.begin();
-    // todo: this has to be shared between the mouse and keyboard. so it should be initialized globally
-    // other initialization may follow
-
-    // todo: BIG BUG: we should block on ONE xQueueReceive, 
-    // then switch DEVICE_MODE after the receive, 
-    // as it could've changed while we were waiting
 
     UserInputMessage someEvent;
     while (1) {
-        vTaskDelay(10); // for debuggin
-        switch (DEVICE_MODE) {
-            case DeviceMode_t::KEYBOARD: {
-                // <-- we should also do haptics here
-                if (xQueueReceive(q_userinput, (void *) &someEvent, portMAX_DELAY)) {
+        if (xQueueReceive(q_userinput, (void *) &someEvent, portMAX_DELAY)) {
+            switch (DEVICE_MODE) {
+                
+                case DeviceMode_t::KEYBOARD: {
+                    // todo: haptics for all modes
                     if (someEvent.uit == UserInputEnum::PAIR) {
                         // in keyboard mode, we only look at the double-keypresses
                         // the following will probably go in its own function
@@ -48,14 +39,13 @@ void task_mode_keyboard(void *pv) {
                             debugln(which_key);
                         }
                     }
+                    break;
                 }
-                break;
-            }
 
-            case DeviceMode_t::JOYSTICK: {
-                static bool lastSinglePressWasDualFirst = false;
-                static uint8_t extraBytes[JOYSTICKMAP_DUAL_LENGTH]; // for tracking toggles
-                if (xQueueReceive(q_userinput, (void *) &someEvent, portMAX_DELAY)) {
+                case DeviceMode_t::JOYSTICK: {
+                    static bool lastSinglePressWasDualFirst = false;
+                    static uint8_t extraBytes[JOYSTICKMAP_DUAL_LENGTH]; // for tracking toggles
+
                     // in joystick mode, we look at both types of object in the queue to determine actions
                     char which_key            = 0U;
                     uint8_t which_mousebutton = 0U;
@@ -183,12 +173,12 @@ void task_mode_keyboard(void *pv) {
                         default:
                             break;
                     }
-                }
-                break;
-            }
 
-            case DeviceMode_t::AUDIOIMAGE: {
-                if (xQueueReceive(q_userinput, (void *) &someEvent, portMAX_DELAY)) {
+                    break;
+                }
+
+                case DeviceMode_t::AUDIOIMAGE: {
+
                     if (someEvent.uit == UserInputEnum::TRIPLET) {
                         // may have something. let's optimistically decode the last 2 presses first,
                         // assuming the first button press is valid.
@@ -246,14 +236,13 @@ void task_mode_keyboard(void *pv) {
                                 break;
                         }
                     }
+
+                    break;
                 }
-                break;
-            }
-            default: {
-                // if we default, there is no xQueueReceive to prevent fast spinning. we should wait.
-                debugln("no valid mode, chilling");
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
-                break;
+                default: {
+                    debugln("no valid mode");
+                    break;
+                }
             }
         }
     }

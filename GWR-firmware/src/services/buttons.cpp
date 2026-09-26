@@ -226,9 +226,7 @@ void task_buttons(void *pv) {
                     buttonMessage.uit     = UserInputEnum::SINGLE;
                     rbe2->alreadySentAs   = UserInputEnum::SINGLE;
                     if (xQueueSend(q_userinput, (void *) &buttonMessage, 0) == pdTRUE) {
-                        debugln("yippee");
-                    } else {
-                        debugln("fuck");
+                        // debugln("button was pressed");
                     }
                 }
                 // send all double presses. we're chilling since everyone in the stack was just confirmed valid
@@ -287,7 +285,7 @@ void task_buttons(void *pv) {
                 buttonMessage.uit     = UserInputEnum::RELEASE;
                 rbe2->alreadySentAs   = UserInputEnum::RELEASE;
                 if (xQueueSend(q_userinput, (void *) &buttonMessage, (TickType_t) 5) == pdTRUE) {
-                    debugln("released button");
+                    // debugln("released button");
                 }
             }
 
