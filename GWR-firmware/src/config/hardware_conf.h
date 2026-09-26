@@ -93,9 +93,10 @@ namespace Pins {
 #endif
 } // namespace Pins
 
+// ******************
 namespace Buttons {
     // mapping for each button onto a gpio expander port and bit
-    // port A: just the bit number
+    // port A: just the bit number. 5 is currently unused
     // port B: bit is &'d with 0x80
     constexpr uint8_t TIP   = 7;
     constexpr uint8_t FREN  = 3;
@@ -106,6 +107,8 @@ namespace Buttons {
     constexpr uint8_t RFAR  = 2;
 
 // example extension:
+// if you add more buttons, you need to update the array below,
+// and you may also want to update the keybinds_conf.h!
 #ifdef HAS_REVB_DAUGHTERBOARD
     constexpr uint8_t TOPP = 0 | 0x80; // top button
     constexpr uint8_t SHF2 = 1 | 0x80; // second shaft button
@@ -113,6 +116,24 @@ namespace Buttons {
     constexpr uint8_t RMID = 3 | 0x80; // right-middle button
 #endif
 } // namespace Buttons
+
+constexpr uint8_t laexpui_buttons[] = {
+    // todo: just use 1<<0..1<<15
+    // list of all expander user interfacing buttons
+    // they must be listed here or they won't be scanned by the buttons service
+    // if we update Buttons:: to include more members, include them here!
+    Buttons::TIP,   //
+    Buttons::FREN,  //
+    Buttons::SHAFT, //
+    Buttons::LNEAR, //
+    Buttons::RNEAR, //
+    Buttons::LFAR,  //
+    Buttons::RFAR,  //
+};
+
+constexpr uint8_t NUM_EXPUI_BUTTONS = (uint8_t) (sizeof(laexpui_buttons) / sizeof(uint8_t));
+// ******************
+
 // expert zone
 
 // interface speeds

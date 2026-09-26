@@ -48,6 +48,6 @@ extern bool g_wifiReady;
 /**
  * @brief System initialization and global variable initialization routine
  * 
- * @details Starts USB devices, settings objects, as well as our semaphores and queues
+ * @details Starts USB devices as well as our semaphores and queues
  */
 void initTaskGlobals();

@@ -15,6 +15,10 @@ void task_mode_keyboard(void *pv) {
     // todo: this has to be shared between the mouse and keyboard. so it should be initialized globally
     // other initialization may follow
 
+    // todo: BIG BUG: we should block on ONE xQueueReceive, 
+    // then switch DEVICE_MODE after the receive, 
+    // as it could've changed while we were waiting
+
     UserInputMessage someEvent;
     while (1) {
         vTaskDelay(10); // for debuggin
@@ -22,7 +26,7 @@ void task_mode_keyboard(void *pv) {
             case DeviceMode_t::KEYBOARD: {
                 // <-- we should also do haptics here
                 if (xQueueReceive(q_userinput, (void *) &someEvent, portMAX_DELAY)) {
-                    if (someEvent.uit = UserInputEnum::PAIR) {
+                    if (someEvent.uit == UserInputEnum::PAIR) {
                         // in keyboard mode, we only look at the double-keypresses
                         // the following will probably go in its own function
                         char which_key = 0U;
@@ -33,8 +37,8 @@ void task_mode_keyboard(void *pv) {
                                 break;
                             }
                         }
-                        debugln(which_key);
                         if (which_key > 0U) {
+                            debugf("'%c'\n", which_key);
                             Keyboard.press(which_key);
                             // <-- we should also write to the display here
                             vTaskDelay(10); // todo make configurable
@@ -185,7 +189,7 @@ void task_mode_keyboard(void *pv) {
 
             case DeviceMode_t::AUDIOIMAGE: {
                 if (xQueueReceive(q_userinput, (void *) &someEvent, portMAX_DELAY)) {
-                    if (someEvent.uit = UserInputEnum::TRIPLET) {
+                    if (someEvent.uit == UserInputEnum::TRIPLET) {
                         // may have something. let's optimistically decode the last 2 presses first,
                         // assuming the first button press is valid.
                         String fname;

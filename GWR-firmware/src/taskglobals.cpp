@@ -67,20 +67,11 @@ void initTaskGlobals() {
     Mutexes::SDCard    = xSemaphoreCreateMutex(); // you must take the SPI mutex before and in addition to the SDCard Mutex.
 
     // queues
-    q_userinput   = xQueueCreate(8, sizeof(UserInputMessage));
+    q_userinput   = xQueueCreate(16, sizeof(UserInputMessage));
     q_mouseclicks = xQueueCreate(8, sizeof(MouseclickMessage));
     q_sfx_tts     = xQueueCreate(10, sizeof(AudioMessage));
     q_display     = xQueueCreate(16, sizeof(DisplayMessage));
     q_haptic      = xQueueCreate(2, sizeof(HapticMessage));
-  
-    if (!getSettingsConfig(&settings)) {
-        #ifdef VERSION_DEV
-        debuglnF("wanting to overwriting settings file!");
-        vTaskDelay(1000);
-        //createDefaultSettingsConfig(true);
-        #endif
-    }
-    //printSettingsConfig(settings);
 
     debuglnF("Init complete");
 }
