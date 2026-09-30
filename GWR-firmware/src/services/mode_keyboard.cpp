@@ -198,7 +198,7 @@ void task_mode_keyboard(void *pv) {
                         }
                         switch (someEvent.button1) {
                             case MM_BUTTON_AUDIO: {
-                                fname = FSPATH::UserImagesFolder;
+                                fname = FSPATH::UserSoundsFolder;
                                 fname += digit1;
                                 fname += digit2;
                                 fname += ".mp3";
@@ -215,7 +215,7 @@ void task_mode_keyboard(void *pv) {
                                 break;
                             }
                             case MM_BUTTON_IMAGE: {
-                                fname = FSPATH::UserSoundsFolder;
+                                fname = FSPATH::UserImagesFolder;
                                 fname += digit1;
                                 fname += digit2;
                                 fname += ".bmp";
