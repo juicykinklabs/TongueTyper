@@ -2,7 +2,7 @@
 #include "structs/HapticMessage.h"
 
 /**
- * @brief Completely shutdown haptics
+ * @brief Directly disable output to haptics - used by task_hapticEngine
  * 
  */
 void disableHVibe();

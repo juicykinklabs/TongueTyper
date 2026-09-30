@@ -45,7 +45,7 @@ namespace Pins {
     namespace TFT {
         constexpr uint8_t DC = D1;
         constexpr uint8_t CS = D2;
-        // constexpr uint8_t RST = not yet defined;
+        constexpr uint8_t RST = -1; // not defined
     } // namespace TFT
     namespace SD {
         constexpr uint8_t CS = D4;
@@ -92,6 +92,8 @@ namespace Pins {
 #else
 #endif
 } // namespace Pins
+
+#define HAS_GPIO_EXPANDER (PCB_REVISION >= 1)
 
 // ******************
 namespace Buttons {
@@ -153,3 +155,20 @@ namespace SPISpeed {
 
 #define VBAT_DIV_HIGH (820000) // ohms
 #define VBAT_DIV_LOW  (270000) // ohms
+
+#define VBAT_FULL (4.2) // volts
+
+#define V_MOTOR_MIN (0.75)
+#define V_MOTOR_MAX (3.00)
+
+#if PCB_REVISION == 0
+#define V_MOTOR_INPUT (3.30)
+#elif PCB_REVISION == 1
+#define V_MOTOR_INPUT (2.50)
+#elif PCB_REVISION == 2
+#define V_MOTOR_INPUT (VBAT_FULL)
+#endif
+
+static_assert(V_MOTOR_MIN < V_MOTOR_INPUT);
+static_assert(V_MOTOR_MAX > V_MOTOR_MIN);
+// (if V_MOTOR_INPUT < V_MOTOR_MAX, we can handle it at runtime in haptics, just won't be as strong)

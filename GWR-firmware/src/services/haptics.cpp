@@ -31,12 +31,9 @@ void task_hapticEngine(void *pv) {
                             settings.haptic.strength = 0.0;
                         }
                         double actual_strength_multiplier = constrain(settings.haptic.strength, 0.0, 1.0);
-                        // map 0.0-1.0 onto 1.5/4.2 (0.35) to 3.7/4.2 (0.88)
-                        if (actual_strength_multiplier <= 0.05) {
-                            actual_strength_multiplier = 0.0;
-                        } else {
-                            actual_strength_multiplier = mapfloat(actual_strength_multiplier, 0.0, 1.0, 0.35, 0.88);
-                        }
+                        // map 0.0-1.0 onto acceptable motor voltage range
+                        actual_strength_multiplier = mapfloat(actual_strength_multiplier, 0.0, 1.0, V_MOTOR_MIN / V_MOTOR_INPUT, min(1.0, V_MOTOR_MAX / V_MOTOR_INPUT));
+                        // todo: we need to secure the SPI bus so noise from our pwm doesn't disrupt it!
                         analogWrite(Pins::HVIBE, hc.intensities[i] * actual_strength_multiplier);
                     }
                     vTaskDelayUntil(&taskSubTimer, max(hc.durations[i] / portTICK_PERIOD_MS, (TickType_t) 1));
