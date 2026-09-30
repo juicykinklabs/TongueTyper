@@ -1,34 +1,30 @@
 #include "settings.h"
 
-#include <SPI.h>
-#include <SD.h>
 #include <ArduinoJson.h>
 
 #include "config/app_conf.h"
 #include "config/constants.h"
+#include "util/sd_ops.h"
 
 #include "taskglobals.h"
 
-bool writeSettingsConfigFromJson(const JsonDocument &jdoc) {
-    SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
-    // todo check if SD.begin was ok
-    SD.remove(FSPATH::Settings);
+namespace {
+    template <typename T> bool readSetting(JsonVariantConst value, const char *path, const char *expectedType, T &out) {
+        if (value.isNull()) {
+            debugf("%s missing or null (expects %s)\n", path, expectedType);
+            return false;
+        }
 
-    File file = SD.open(FSPATH::Settings, FILE_WRITE);
-    // todo check if file is ok
+        if (!value.is<T>()) {
+            debugf("%s has the wrong type (expects %s)\n", path, expectedType);
+            return false;
+        }
 
-    if (serializeJsonPretty(jdoc, file) == 0) {
-        debuglnF("Failed to write to file");
-        file.close();
-        SD.end();
-        return false;
+        out = value.as<T>();
+        return true;
     }
 
-    // Close the file
-    file.close();
-    SD.end();
-    return true;
-}
+} // namespace
 
 bool writeSettingsConfig(const SettingsConfig &sc) {
     JsonDocument doc;
@@ -50,14 +46,21 @@ bool writeSettingsConfig(const SettingsConfig &sc) {
     doc["Haptics"]["Pattern"]      = sc.haptic.pattern;
     doc["HID"]["MouseSensitivity"] = sc.hid.mouseSense;
 
-    return writeSettingsConfigFromJson(doc);
+    if (sdOpBegin()) {
+        bool success = jdocToFile(FSPATH::Settings, doc);
+        sdOpEnd();
+        return success;
+    }
+    return false;
 }
 
-void deleteSettingsConfig() {
-    SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
-    // todo check if begin ok, also take semaphore
-    SD.remove(FSPATH::Settings);
-    SD.end();
+bool deleteSettingsConfig() {
+    if (sdOpBegin()) {
+        bool success = fileRemove(FSPATH::Settings);
+        sdOpEnd();
+        return success;
+    }
+    return false;
 }
 
 void createDefaultSettingsConfig(bool overWriteExisting) {
@@ -82,98 +85,112 @@ void createDefaultSettingsConfig(bool overWriteExisting) {
     defaults.haptic.pattern    = 2;
     defaults.hid.mouseSense    = 1200; // pixels per second maximum
 
-    SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
-    File file = SD.open(FSPATH::Settings, FILE_READ);
-
-    if (!file || overWriteExisting) {
-        file.close();
-        SD.end();
-        if (!overWriteExisting) {
+    bool need_write = false;
+    if (sdOpBegin()) {
+        if (not fileExists(FSPATH::Settings)) {
             debugln("No settings-config, creating one from scratch");
-        } else {
+            need_write = true;
+        } else if (overWriteExisting) {
             debugln("Manually overwriting settings config");
+            need_write = true;
         }
+        sdOpEnd();
+    }
+
+    if (need_write) {
+        // has its own sd begin/end
         writeSettingsConfig(defaults);
-    } else {
-        file.close();
-        SD.end();
     }
 }
 
-bool getSettingsConfigAsJson(JsonDocument &jdoc, bool regenerate) {
-    if (regenerate) {
+bool getSettingsConfigAsJson(JsonDocument &jdoc, bool allow_regeneration) {
+    if (allow_regeneration) {
         bool success = getSettingsConfigAsJson(jdoc, false);
         if (!success) {
-            debuglnF("settings.json corrupted or missing, force regenerating");
+            debuglnF("settings.json corrupted or missing, regenerating");
             createDefaultSettingsConfig(true);
             return getSettingsConfigAsJson(jdoc, false);
         }
         return true;
     } else {
-        if (xSemaphoreTake(Mutexes::SPI, (TickType_t) 500)) {
-            if (xSemaphoreTake(Mutexes::SDCard, (TickType_t) 500)) {
-                bool success = SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
-                if (!success) {
-                    debuglnF("getSettingsConfigAsJson: SD begin failure");
-                    xSemaphoreGive(Mutexes::SPI);
-                    xSemaphoreGive(Mutexes::SDCard);
-                    return false;
-                }
-                File file = SD.open(FSPATH::Settings);
-                if (!file) {
-                    debuglnF("getSettingsConfigAsJson: problem with file");
-                    SD.end();
-                    xSemaphoreGive(Mutexes::SPI);
-                    xSemaphoreGive(Mutexes::SDCard);
-                    return false;
-                }
 
-                DeserializationError error = deserializeJson(jdoc, file);
-                if (error) {
-                    debugF("deserializeJson() failed: ");
-                    debugln(error.f_str());
-                }
-                file.close();
-                SD.end();
-                xSemaphoreGive(Mutexes::SDCard);
-                xSemaphoreGive(Mutexes::SPI);
-                return !error;
-            } else {
-                debuglnF("sd semaphore problem");
-                xSemaphoreGive(Mutexes::SPI);
-                return false;
-            }
-        } else {
-            debuglnF("spi semaphore problem");
-            return false;
+        if (sdOpBegin()) {
+            bool success = fileToJdoc(FSPATH::Settings, jdoc);
+            sdOpEnd();
+            return success;
         }
+        return false;
     }
 }
 
-bool getSettingsConfig(SettingsConfig *sc, bool regenerate) {
+bool getSettingsConfig(SettingsConfig *sc, bool allow_regeneration) {
     JsonDocument doc;
-    bool success = getSettingsConfigAsJson(doc, regenerate);
+    bool success = getSettingsConfigAsJson(doc, allow_regeneration);
 
-    sc->adxl.ofx          = doc["ADXL"].as<JsonObject>()["OFX"];
-    sc->adxl.ofy          = doc["ADXL"].as<JsonObject>()["OFY"];
-    sc->adxl.ofz          = doc["ADXL"].as<JsonObject>()["OFZ"];
-    sc->wifi.enabled      = doc["WiFi"].as<JsonObject>()["Enabled"];
-    sc->wifi.ssid         = doc["WiFi"].as<JsonObject>()["SSID"].as<String>();
-    sc->wifi.pswd         = doc["WiFi"].as<JsonObject>()["PSWD"].as<String>();
-    sc->disp.brightness   = doc["Display"].as<JsonObject>()["Brightness"];
-    sc->disp.font         = doc["Display"].as<JsonObject>()["Font"].as<String>();
-    sc->disp.invertColors = doc["Display"].as<JsonObject>()["InvertColors"];
-    sc->sfx.volume        = doc["SoundFX"].as<JsonObject>()["Volume"];
-    sc->sfx.announce      = doc["SoundFX"].as<JsonObject>()["Announce"];
-    sc->sfx.lang          = doc["SoundFX"].as<JsonObject>()["Lang"].as<String>();
-    sc->haptic.enabled    = doc["Haptics"].as<JsonObject>()["Enabled"];
-    sc->haptic.strength   = doc["Haptics"].as<JsonObject>()["Strength"];
-    sc->haptic.pattern    = doc["Haptics"].as<JsonObject>()["Pattern"];
-    sc->hid.mouseSense    = doc["HID"].as<JsonObject>()["MouseSensitivity"];
+    if (doc.isNull()) {
+        debugln("json doc is null. uh oh");
+    }
 
-    // we should check if any of these are null
-    // and throw something up, maybe even overwrite the existing config.
-    // but range validation is up to the individual task.
+    bool ok = true;
+
+    if(not readSetting(doc["ADXL"]["OFX"], "ADXL.OFX", "integer", sc->adxl.ofx)) {
+        ok = false;
+    }
+    if(not readSetting(doc["ADXL"]["OFY"], "ADXL.OFY", "integer", sc->adxl.ofy)) {
+        ok = false;
+    }
+    if(not readSetting(doc["ADXL"]["OFZ"], "ADXL.OFZ", "integer", sc->adxl.ofz)) {
+        ok = false;
+    }
+    if(not readSetting(doc["WiFi"]["Enabled"], "WiFi.Enabled", "boolean", sc->wifi.enabled)) {
+        ok = false;
+    }
+    if(not readSetting(doc["WiFi"]["SSID"], "WiFi.SSID", "string", sc->wifi.ssid)) {
+        ok = false;
+    }
+    if(not readSetting(doc["WiFi"]["PSWD"], "WiFi.PSWD", "string", sc->wifi.pswd)) {
+        ok = false;
+    }
+    if(not readSetting(doc["Display"]["Brightness"], "Display.Brightness", "number", sc->disp.brightness)) {
+        ok = false;
+    }
+    if(not readSetting(doc["Display"]["Font"], "Display.Font", "string", sc->disp.font)) {
+        ok = false;
+    }
+    if(not readSetting(doc["Display"]["InvertColors"], "Display.InvertColors", "boolean", sc->disp.invertColors)) {
+        ok = false;
+    }
+    if(not readSetting(doc["SoundFX"]["Announce"], "SoundFX.Announce", "boolean", sc->sfx.announce)) {
+        ok = false;
+    }
+    if(not readSetting(doc["SoundFX"]["Lang"], "SoundFX.Lang", "string", sc->sfx.lang)) {
+        ok = false;
+    }
+    if(not readSetting(doc["SoundFX"]["Volume"], "SoundFX.Volume", "number", sc->sfx.volume)) {
+        ok = false;
+    }
+    if(not readSetting(doc["Haptics"]["Enabled"], "Haptics.Enabled", "boolean", sc->haptic.enabled)) {
+        ok = false;
+    }
+    if(not readSetting(doc["Haptics"]["Strength"], "Haptics.Strength", "number", sc->haptic.strength)) {
+        ok = false;
+    }
+    if(not readSetting(doc["Haptics"]["Pattern"], "Haptics.Pattern", "integer", sc->haptic.pattern)) {
+        ok = false;
+    }
+    if(not readSetting(doc["HID"]["MouseSensitivity"], "HID.MouseSensitivity", "integer", sc->hid.mouseSense)) {
+        ok = false;
+    }
+
+    debugf("doc size: %d items\n", doc.size());
+    if (not ok) {
+        debugln("!!! BIG ERROR IN SETTINGS FILE !!!");
+    } else {
+        debugln("settings all okay");
+    }
+
+    // todo if any setting is missing, overwrite JUST it, with a good default
+    // but range validation is still up to the individual task.
 
     return success;
 }

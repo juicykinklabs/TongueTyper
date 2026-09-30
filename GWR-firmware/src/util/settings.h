@@ -3,13 +3,33 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
-#include "config/hardware_conf.h"
 #include "structs/SettingsConfig.h"
 
-bool writeSettingsConfigFromJson(const JsonDocument &jdoc);
+/**
+ * @brief Write a SettingsConfig struct to the SD card
+ * 
+ * @param sc 
+ * @return true
+ * @return false
+ */
 bool writeSettingsConfig(const SettingsConfig &sc);
-void deleteSettingsConfig();
+
+
+bool deleteSettingsConfig();
+
 void createDefaultSettingsConfig(bool overWriteExisting = false);
-bool getSettingsConfigAsJson(JsonDocument &jdoc, bool regenerate = false);
-bool getSettingsConfig(SettingsConfig *sc, bool regenerate = false);
+
+/**
+ * @brief Helper for getSettingsConfig. Get the Settings Config As Json object,
+ *        may recurse once for regeneration logic
+ * 
+ * @param jdoc reference to store the output in
+ * @param allow_regeneration whether we may delete and overwrite the existing file
+ * @return true
+ * @return false 
+ */
+bool getSettingsConfigAsJson(JsonDocument &jdoc, bool allow_regeneration = false);
+
+bool getSettingsConfig(SettingsConfig *sc, bool allow_regeneration = false);
+
 void printSettingsConfig(const SettingsConfig &sc);
