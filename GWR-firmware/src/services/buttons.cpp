@@ -89,6 +89,10 @@ bool flag = false; // todo: use messageFromISR
 void isr_gpio_int() { flag = true; }
 
 void task_buttons(void *pv) {
+#if not HAS_GPIO_EXPANDER
+#warning "Buttons task requires board with GPIO expander!"
+    vTaskDelete(NULL);
+#else
     // todo: SPI mutex
     // hardware setup
     SPI.begin(Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
@@ -210,8 +214,8 @@ void task_buttons(void *pv) {
         int32_t buttBuffIndexEnd = (RawButtonEventBufIndex <= 0) ? (RawButtonEventBufSize - 1) : (RawButtonEventBufIndex - 1) % RawButtonEventBufSize;
         int32_t i                = buttBuffIndexStart;
         int32_t i_pair_idx       = -1;
-        int32_t i_triplet_idx1    = -1;
-        int32_t i_triplet_idx2    = -1;
+        int32_t i_triplet_idx1   = -1;
+        int32_t i_triplet_idx2   = -1;
 
         while (1) {
             // a circular iterator thingy, i'm just trying to get this done, ok?
@@ -232,7 +236,6 @@ void task_buttons(void *pv) {
                 // send all double presses. we're chilling since everyone in the stack was just confirmed valid
                 // todo: just use a couple pointers and swap them this is too complicated and stupid
                 if (rbe2->alreadySentAs == UserInputEnum::SINGLE) {
-                    
 
                     if (i_pair_idx == -1) {
                         // can't set buttonMessage.button1 directly
@@ -248,7 +251,7 @@ void task_buttons(void *pv) {
                         rbe2->alreadySentAs                = UserInputEnum::PAIR;
                         buttBuff[i_pair_idx].alreadySentAs = UserInputEnum::PAIR;
                         i_pair_idx                         = -1;
-                        
+
                         buttonMessage.uit = UserInputEnum::PAIR;
                         if (xQueueSend(q_userinput, (void *) &buttonMessage, 0) == pdTRUE) {
                             debugf("outgoing pair: %d,%d\n", buttonMessage.button1, buttonMessage.button2);
@@ -267,10 +270,10 @@ void task_buttons(void *pv) {
                         buttonMessage.button3 = rbe2->button;
                         debugf("promoted indices:%d,%d,%d\n", i_triplet_idx2, i_triplet_idx1, i);
                         showButtBuff();
-                        rbe2->alreadySentAs = UserInputEnum::TRIPLET;
+                        rbe2->alreadySentAs                    = UserInputEnum::TRIPLET;
                         buttBuff[i_triplet_idx1].alreadySentAs = UserInputEnum::TRIPLET;
                         buttBuff[i_triplet_idx2].alreadySentAs = UserInputEnum::TRIPLET;
-                        buttonMessage.uit = UserInputEnum::TRIPLET;
+                        buttonMessage.uit                      = UserInputEnum::TRIPLET;
                         if (xQueueSend(q_userinput, (void *) &buttonMessage, 0) == pdTRUE) {
                             debugf("outgoing triplet: %d,%d,%d\n", buttonMessage.button1, buttonMessage.button2, buttonMessage.button3);
                         }
@@ -303,4 +306,5 @@ void task_buttons(void *pv) {
     }
 
     vTaskDelete(NULL);
+#endif
 }
