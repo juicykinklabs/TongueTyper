@@ -3,7 +3,8 @@
 /**
  * @brief Change the PWM value sent to the display
  * 
- * @param b Brightness value, range 0.0 - 1.0 
+ * @param b Brightness value, range (0.0, 1.0]
+ *          we may also pass a value <= 0 to drive the pin low
  */
 void setTFTBrightness(double b);
 

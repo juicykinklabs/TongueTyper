@@ -14,16 +14,37 @@
 #include "config/hardware_conf.h"
 #include "structs/DisplayMessage.h"
 #include "util/settings.h"
+
+#include "util/sd_ops.h"
+
 #include "taskglobals.h"
 
 void setTFTBrightness(double b) {
 #ifdef PCB_REVISION
-#if PCB_REVISION >= 1
+#if PCB_REVISION == 0
+// there is no TFT backlight pin, brightness will be max
+#endif
+#if PCB_REVISION == 1
+// like 90% sure the pins on this board are internally shorted
+// and that's why there's flickering...
+pinMode(Pins::TFT::BL, INPUT_PULLUP);
+
+#endif
+#if PCB_REVISION > 1
     // analogWriteResolution(TFT_PIN, 8);
     // analogWriteFrequency(TFT_PIN, 100); // these were giving errors so lets leave em commented
+    
+    if (b <= 0) {
+        // black out screen
+        pinMode(Pins::TFT::BL, OUTPUT);
+        digitalWrite(Pins::TFT::BL, LOW);
+        // we just need to delay long enough that our next SPI write is safe
+        delayMicroseconds(400);
+    }
     analogWrite(Pins::TFT::BL, (int) (255 * (b)));
 #endif
 #endif
+
 }
 
 void task_displayImageOrText(void *pv) {
@@ -33,10 +54,13 @@ void task_displayImageOrText(void *pv) {
     Adafruit_GC9A01A tft(Pins::TFT::CS, Pins::TFT::DC);
     // Adafruit_GC9A01A tft(Pins::TFT::CS, Pins::TFT::DC, 0xFE);
 
-    SdSpiConfig sdConfig(Pins::SD::CS, SHARED_SPI, SPISpeed::SD, &SPI);
-
-    SdFat32 SD_as_FAT32;
+    //SdSpiConfig sdConfig(Pins::SD::CS, SHARED_SPI, SPISpeed::SD, &SPI);
+    // todo: we want a shared sdConfig and SD_as_FAT32 that is extern to sd_ops for usage here
+    //SdFat32 SD_as_FAT32;
     Adafruit_ImageReader reader(SD_as_FAT32);
+    
+    setTFTBrightness(-1);
+    
     if (xSemaphoreTake(Mutexes::SPI, portMAX_DELAY) == pdTRUE) {
         SPI.end();
         SPI.begin(Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
@@ -47,16 +71,8 @@ void task_displayImageOrText(void *pv) {
         vTaskDelay(1);
 
         tft.begin(SPISpeed::TFT);
-
-#ifdef PCB_REVISION
-#if PCB_REVISION >= 1
-        pinMode(Pins::TFT::BL, OUTPUT); // OUTPUT or ANALOG?
-#endif
-#endif
-        setTFTBrightness(0);
         tft.fillScreen(GC9A01A_BLACK);
 
-        setTFTBrightness(settings.disp.brightness);
         xSemaphoreGive(Mutexes::SPI);
     } else {
         // couldn't secure the SPI bus
@@ -71,6 +87,7 @@ void task_displayImageOrText(void *pv) {
             debugln("display recv");
             debugln(cmd.data);
             if (xSemaphoreTake(Mutexes::SPI, portMAX_DELAY) == pdTRUE) {
+                setTFTBrightness(-1);
                 SPI.end();
                 SPI.begin(Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
                 tft.begin(SPISpeed::TFT); // still crashing without this line when going from displaying images to displaying text
@@ -78,11 +95,9 @@ void task_displayImageOrText(void *pv) {
 
                 if (cmd.instruction == DisplayInstruction::JUST_CLEAR) {
                     tft.fillScreen(GC9A01A_BLACK);
-                    setTFTBrightness(0);
                     debuglnF("cleared screen");
                 } else if (cmd.instruction == DisplayInstruction::DRAW_IMAGE) {
                     debugln("DRAW IMAGE");
-                    // setTFTBrightness(0); // black out the display before drawing next image
                     if (xSemaphoreTake(Mutexes::SDCard, (TickType_t) 500) == pdTRUE) {
 
                         bool success = SD_as_FAT32.begin(sdConfig);
@@ -93,7 +108,6 @@ void task_displayImageOrText(void *pv) {
                             debugln(cmd.data);
                             // SD_as_FAT32.ls(LS_R);
                             ImageReturnCode rc = reader.drawBMP(cmd.data, tft, 0, 0, true);
-                            setTFTBrightness(settings.disp.brightness);
                             if (rc != IMAGE_SUCCESS) {
                                 success = false;
                                 debuglnF("ImageReader error");
@@ -207,12 +221,9 @@ void task_displayImageOrText(void *pv) {
                     centeredY = y_offset_subtitle + (h + 2) + tft.height() / 2 - (y1 + h / 2); // add additional pixels (h+2)
                     tft.setCursor(centeredX, centeredY);
                     tft.print(subtitleLine2);
-
-                    // make sure the drawing is visible, in case some other mode
-                    // changed the brightness,
-                    setTFTBrightness(settings.disp.brightness);
                 }
                 xSemaphoreGive(Mutexes::SPI);
+                setTFTBrightness(settings.disp.brightness);
             } else {
                 debugln("no semaphore");
             }
