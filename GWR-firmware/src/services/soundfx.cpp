@@ -42,12 +42,20 @@ void task_soundfx(void *pv) {
             bool connectionSuccess = false;
             switch (thisAudioEvent.instruction) {
                 case AudioEventEnum::SFX: {
-                    SPI.end();
-                    SPI.begin(Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
-                    SD.begin(Pins::SD::CS, SPI, SPISpeed::SD); // todo semamphore
-                    connectionSuccess = audio.connecttoFS(SD, thisAudioEvent.data);
-                    audioLoopToCompletion();
-                    SD.end();
+                    if (xSemaphoreTake(Mutexes::SPI, portMAX_DELAY) == pdTRUE) {
+                        // todo: timeouts for these semaphores?
+                        if (xSemaphoreTake(Mutexes::SDCard, portMAX_DELAY) == pdTRUE) {
+                            SPI.end();
+                            SPI.begin(Pins::SPI::SCK, Pins::SPI::MISO, Pins::SPI::MOSI);
+                            SD.begin(Pins::SD::CS, SPI, SPISpeed::SD);
+                            connectionSuccess = audio.connecttoFS(SD, thisAudioEvent.data);
+                            audioLoopToCompletion();
+                            SD.end();
+                            
+                            xSemaphoreGive(Mutexes::SDCard);
+                        }
+                        xSemaphoreGive(Mutexes::SPI);
+                    }
                     break;
                 }
                 case AudioEventEnum::TTS: {
