@@ -31,6 +31,11 @@ typedef struct sc_haptic {
     uint32_t pattern;
 } sc_haptic;
 
+typedef struct sc_input {
+    uint32_t debounce;
+    uint32_t timeout;
+} sc_input;
+
 typedef struct sc_hid {
     uint32_t mouseSense;
 } sc_hid;
@@ -41,5 +46,6 @@ typedef struct SettingsConfig {
     sc_disp disp;
     sc_sfx sfx;
     sc_haptic haptic;
+    sc_input input;
     sc_hid hid;
 } SettingsConfig;

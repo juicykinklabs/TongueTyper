@@ -41,10 +41,11 @@ bool getSettingsConfigAsJson(JsonDocument &jdoc);
  *        range validation is still up to the individual task.
  * 
  * @param sc output struct
+ * @param dsc default settings struct
  * @param allow_modification whether we may modify the contents of an existing settings file
  * @return true on success or successful regeneration
  * @return false on catastrophic failure, implying the program should halt
  */
-bool getSettingsConfig(SettingsConfig *sc, bool allow_modification = true);
+bool getSettingsConfig(SettingsConfig &sc, const SettingsConfig& dsc, bool allow_modification = true);
 
 void printSettingsConfig(const SettingsConfig &sc);

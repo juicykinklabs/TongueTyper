@@ -98,7 +98,7 @@ bool jdocToFile(const char* fspath, const JsonDocument &jdoc) {
     // overwrite a file with the serialized contents of a json document
     fileRemove(fspath);
 
-    File32 file = SD_as_FAT32.open(fspath, O_WRITE);
+    File32 file = SD_as_FAT32.open(fspath, O_WRITE | O_CREAT);
     if (!file) {
         debugln("couldn't create file");
         return false;

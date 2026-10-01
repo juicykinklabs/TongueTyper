@@ -64,7 +64,7 @@ void initAppSettings() {
     // to read settings from SD card
     // required for most tasks
     
-    if (not getSettingsConfig(&settings)) {
+    if (not getSettingsConfig(settings, defaultsettings, true)) {
         debuglnF("getSettingsConfig failed - cannot continue. Is there an SD card?");
         while (1) {
             vTaskDelay(1000);

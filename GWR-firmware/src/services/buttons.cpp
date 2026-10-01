@@ -21,10 +21,6 @@ typedef struct RawButtonEvent {
     uint8_t _pad;
 } RawButtonEvent;
 
-// we'll get these from settings at some point
-constexpr uint32_t debounce_ms       = 50;
-constexpr uint32_t delete_older_than = 3000;
-
 const size_t RawButtonEventBufSize = NUM_EXPUI_BUTTONS * 3; // should be plenty
 static RawButtonEvent buttBuff[RawButtonEventBufSize];
 
@@ -50,7 +46,7 @@ void makeOldStale() {
     for (int i = 0; i < RawButtonEventBufSize; i++) {
         if ((buttBuff[i].valid)) {
             validCounter++;
-            if (((buttBuff[i].timestamp + delete_older_than) <= millis())) {
+            if (((buttBuff[i].timestamp + settings.input.timeout) <= millis())) {
                 buttBuff[i].valid = false;
                 shouldPrint       = true;
             }
@@ -72,11 +68,11 @@ bool stateChangedTooRecently(uint8_t button, bool onlyCheckPresses = false) {
         checkAgainst = &(buttBuff[i]);
         if (onlyCheckPresses) {
             if ((checkAgainst->button == button) && (checkAgainst->valid) && (checkAgainst->isPressed)) {
-                return checkAgainst->timestamp + debounce_ms >= function_called_at;
+                return checkAgainst->timestamp + settings.input.debounce >= function_called_at;
             }
         } else {
             if ((checkAgainst->button == button) && (checkAgainst->valid)) {
-                return checkAgainst->timestamp + debounce_ms >= function_called_at;
+                return checkAgainst->timestamp + settings.input.debounce >= function_called_at;
             }
         }
     }
