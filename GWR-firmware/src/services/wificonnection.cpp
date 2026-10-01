@@ -21,7 +21,7 @@ void task_wificonnection(void *pv) {
         WiFi.mode(WIFI_OFF); // todo verify these lines are in the right order
     }
 
-    if (!strcasecmp(settings.wifi.ssid.c_str(), "myPassword")) {
+    if (!strcasecmp(settings.wifi.ssid.c_str(), WIRELESS::defaultPSWD)) {
         firstTimeConnect = true;
     }
 

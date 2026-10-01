@@ -19,4 +19,6 @@ namespace FSPATH {
 
 namespace WIRELESS {
     constexpr char hostname[] = "ttyper"; // letters, numbers, and dashes only
+    constexpr char defaultSSID[] = "myAccessPoint";
+    constexpr char defaultPSWD[] = "myPassword";
 }
