@@ -31,7 +31,7 @@
 namespace Pins {
 #if PCB_REVISION == 0
     // Breadboarding with an esp32-s3 NON plus
-    constexpr uint8_t HVIBE = GPIO_NUM_44;
+    constexpr uint8_t HVIBE = D7;
     namespace SPI {
         constexpr uint8_t SCK  = D8;
         constexpr uint8_t MISO = D9;
@@ -45,7 +45,7 @@ namespace Pins {
     namespace TFT {
         constexpr uint8_t DC = D1;
         constexpr uint8_t CS = D2;
-        constexpr uint8_t RST = -1; // not defined
+        constexpr uint8_t RST = GPIO_NUM_NC; // not defined
     } // namespace TFT
     namespace SD {
         constexpr uint8_t CS = D4;
@@ -168,6 +168,9 @@ namespace SPISpeed {
 #elif PCB_REVISION == 2
 #define V_MOTOR_INPUT (VBAT_FULL)
 #endif
+
+static_assert(VBAT_DIV_LOW > 0);
+static_assert((VBAT_DIV_LOW + VBAT_DIV_HIGH) > 0);
 
 static_assert(V_MOTOR_MIN < V_MOTOR_INPUT);
 static_assert(V_MOTOR_MAX > V_MOTOR_MIN);

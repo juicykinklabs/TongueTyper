@@ -45,6 +45,7 @@ extern SettingsConfig defaultsettings;
 
 extern AccelEvent g_accelEvent;
 extern bool g_wifiReady;
+extern float g_battery_voltage;
 
 /**
  * @brief System initialization and global variable initialization routine

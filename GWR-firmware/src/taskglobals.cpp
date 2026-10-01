@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "config/app_conf.h"
+#include "config/hardware_conf.h"
 #include "util/settings.h"
 #include "structs/AudioMessage.h"
 #include "structs/UserInputMessage.h"
@@ -31,6 +32,8 @@ SettingsConfig defaultsettings;
 
 AccelEvent g_accelEvent;
 bool g_wifiReady = false;
+
+float g_battery_voltage = VBAT_FULL;
 
 #ifndef ARDUINO_USB_MODE
 #error SoC has no Native USB interface
