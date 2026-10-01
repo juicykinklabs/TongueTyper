@@ -9,10 +9,11 @@
 #include "services/mouse_out.h"
 #include "services/soundfx.h"
 #include "services/wificonnection.h"
-#include "services/mode_keyboard.h"
 #include "services/haptics.h"
 #include "services/display.h"
 #include "services/buttons.h"
+
+#include "services/modeRouter.h"
 
 #include "webserver/webapi.h"
 
@@ -91,7 +92,6 @@ void setup() {
 
     // #ifdef VERSION_DEV
     //     performNTSP();
-    //     writeSettingsConfig(settings);
     // #endif
     
     // get reset reason and core temp
@@ -110,15 +110,17 @@ void setup() {
     DEVICE_MODE = KEYBOARD;
 
     // *** TEST CODE BELOW ***
-    // xTaskCreate(task_accel, "Accel", 4096, NULL, 3, NULL);
-    debugln("starting keyboard");
-    xTaskCreate(task_mode_keyboard, "Mode Task", 8192, NULL, 5, NULL);
-    // debugln("starting mouse");
-    // xTaskCreate(task_mouse, "Mouse", 4096, NULL, 5, NULL);
+    //debugln("starting accel");
+    //xTaskCreate(task_accel, "Accel", 4096, NULL, 3, NULL);
     
-    //xTaskCreate(task_hapticEngine, "Haptics", 4096, NULL, 7, NULL);
+    //debugln("starting mouse");
+    //xTaskCreate(task_mouse, "Mouse", 4096, NULL, 5, NULL);
+    
+    debugln("starting haptics");
+    xTaskCreate(task_hapticEngine, "Haptics", 4096, NULL, 7, NULL);    
     debugln("starting display");
     xTaskCreate(task_displayImageOrText, "Display", 4096, NULL, 4, NULL);
+    
     // xTaskCreate(task_soundfx, "Audio", 8192, NULL, 8, NULL); //requires wireless, but will ignore if wireless not ready
     // vTaskDelay(1000);
     //xTaskCreate(task_wificonnection, "Wireless", 4096, NULL, 9, NULL); // task started, but wifi may not be ready. put tasks that require wifi after the gate.
@@ -131,28 +133,11 @@ void setup() {
         
     debugln("starting buttons");
     xTaskCreate(task_buttons, "Buttons", 8192, NULL, 8, NULL);
-
+    
+    debugln("starting core router");
+    xTaskCreate(task_moderouter, "Mode Task", 8192, NULL, 5, NULL);
+    
     debuglnF("setup() complete.");
-
-    DisplayMessage dm;
-    AudioMessage am;
-    while (1) {
-        dm.instruction = DisplayInstruction::DRAW_IMAGE;
-        strcpy(dm.data, "/usermedia/images/15.bmp");
-        xQueueSend(q_display, (void *) &dm, 0);
-        vTaskDelay(500);
-        dm.instruction = DisplayInstruction::SHOW_STRING;
-        strcpy(dm.data, "test");
-        xQueueSend(q_display, (void *) &dm, 0);
-        vTaskDelay(500);
-
-        //am.instruction = AudioEventEnum::SFX;
-        //strcpy(am.data, "/usermedia/sounds/11.mp3");
-        //xQueueSend(q_sfx_tts, (void*) &am, 0);
-
-        queueHapticPattern(pattern_Blip);
-        vTaskDelay(1000);
-    }
 }
 
 void loop() { vTaskDelete(NULL); }

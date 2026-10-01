@@ -1,4 +1,4 @@
-#include "mode_keyboard.h"
+#include "modeRouter.h"
 
 #include "config/app_conf.h"
 #include "config/keybinds_conf.h"
@@ -8,7 +8,7 @@
 #include "structs/MouseClickMessage.h"
 #include "taskglobals.h"
 
-void task_mode_keyboard(void *pv) {
+void task_moderouter(void *pv) {
 
     UserInputMessage someEvent;
     while (1) {
