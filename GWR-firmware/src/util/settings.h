@@ -17,19 +17,34 @@ bool writeSettingsConfig(const SettingsConfig &sc);
 
 bool deleteSettingsConfig();
 
-void createDefaultSettingsConfig(bool overWriteExisting = false);
+/**
+ * @brief Helper for getSettingsConfig
+ * 
+ * @param overWriteExisting 
+ */
+void populateDefaultSettingsConfig();
 
 /**
- * @brief Helper for getSettingsConfig. Get the Settings Config As Json object,
- *        may recurse once for regeneration logic
+ * @brief Helper for getSettingsConfig. Get the Settings Config As Json object
  * 
  * @param jdoc reference to store the output in
- * @param allow_regeneration whether we may delete and overwrite the existing file
  * @return true
  * @return false 
  */
-bool getSettingsConfigAsJson(JsonDocument &jdoc, bool allow_regeneration = false);
+bool getSettingsConfigAsJson(JsonDocument &jdoc);
 
-bool getSettingsConfig(SettingsConfig *sc, bool allow_regeneration = false);
+/**
+ * @brief Populate the primary settings struct from the SD card
+ *        If the file is missing, we generate the defaults.
+ *        If a particular setting is missing from the file, we set it to a default
+ *        and perform a writeback to the SD card
+ *        range validation is still up to the individual task.
+ * 
+ * @param sc output struct
+ * @param allow_modification whether we may modify the contents of an existing settings file
+ * @return true on success or successful regeneration
+ * @return false on catastrophic failure, implying the program should halt
+ */
+bool getSettingsConfig(SettingsConfig *sc, bool allow_modification = true);
 
 void printSettingsConfig(const SettingsConfig &sc);

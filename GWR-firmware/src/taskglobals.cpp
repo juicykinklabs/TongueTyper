@@ -27,6 +27,7 @@ QueueHandle_t q_haptic      = NULL;
 QueueHandle_t q_display     = NULL;
 
 SettingsConfig settings;
+SettingsConfig defaultsettings;
 
 AccelEvent g_accelEvent;
 bool g_wifiReady = false;

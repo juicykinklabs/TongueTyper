@@ -64,12 +64,11 @@ void initAppSettings() {
     // to read settings from SD card
     // required for most tasks
     
-    if (!getSettingsConfig(&settings), false) {
-        #ifdef VERSION_DEV
-        debuglnF("wanting to overwriting settings file!");
-        vTaskDelay(1000);
-        //createDefaultSettingsConfig(true);
-        #endif
+    if (not getSettingsConfig(&settings)) {
+        debuglnF("getSettingsConfig failed - cannot continue. Is there an SD card?");
+        while (1) {
+            vTaskDelay(1000);
+        }
     }
     printSettingsConfig(settings);
 }

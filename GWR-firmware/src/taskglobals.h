@@ -41,6 +41,7 @@ extern QueueHandle_t q_haptic;
 extern QueueHandle_t q_display;
 
 extern SettingsConfig settings;
+extern SettingsConfig defaultsettings;
 
 extern AccelEvent g_accelEvent;
 extern bool g_wifiReady;
