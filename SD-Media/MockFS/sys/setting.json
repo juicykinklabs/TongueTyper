@@ -19,6 +19,10 @@
     "Lang": "en",
     "Volume": 0.95
   },
+  "Input": {
+    "Debounce": 50,
+    "Timeout": 3000
+  },
   "Haptics": {
     "Enabled": true,
     "Strength": 0.8,

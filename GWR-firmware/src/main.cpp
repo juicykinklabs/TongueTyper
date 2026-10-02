@@ -12,6 +12,7 @@
 #include "services/haptics.h"
 #include "services/display.h"
 #include "services/buttons.h"
+#include "services/battery.h"
 
 #include "services/modeRouter.h"
 
@@ -21,7 +22,7 @@
 #include "structs/UserInputMessage.h"
 #include "structs/DisplayMessage.h"
 
-#include "util/settings.h"
+#include "io/settings.h"
 #include "util/debug_memory.h"
 #include "util/heartbeat.h"
 
@@ -118,6 +119,10 @@ void setup() {
     
     debugln("starting haptics");
     xTaskCreate(task_hapticEngine, "Haptics", 4096, NULL, 7, NULL);    
+    
+    debugln("starting battery readings");
+    xTaskCreate(task_batt, "Battery", 4096, NULL, 7, NULL);    
+    
     debugln("starting display");
     xTaskCreate(task_displayImageOrText, "Display", 4096, NULL, 4, NULL);
     
@@ -125,10 +130,10 @@ void setup() {
     // vTaskDelay(1000);
     //xTaskCreate(task_wificonnection, "Wireless", 4096, NULL, 9, NULL); // task started, but wifi may not be ready. put tasks that require wifi after the gate.
     //while (settings.wifi.enabled && !g_wifiReady) {
-        //    vTaskDelay(100); // wait before advancing further into setup
-        //}
-        //debugln("starting server");
-        //xTaskCreate(task_webserver, "WebAPI", 8192, NULL, 10, NULL);
+    //    vTaskDelay(100); // wait before advancing further into setup
+    //}
+    //debugln("starting server");
+    //xTaskCreate(task_webserver, "WebAPI", 8192, NULL, 10, NULL);
         
         
     debugln("starting buttons");
@@ -138,6 +143,15 @@ void setup() {
     xTaskCreate(task_moderouter, "Mode Task", 8192, NULL, 5, NULL);
     
     debuglnF("setup() complete.");
+
+    while(1) {
+        queueHapticPattern(pattern_Blip);
+        vTaskDelay(1000);
+        queueHapticPattern(pattern_Jolt);
+        vTaskDelay(1000);
+        queueHapticPattern(pattern_Triangle);
+        vTaskDelay(1000);
+    }
 }
 
 void loop() { vTaskDelete(NULL); }

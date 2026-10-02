@@ -2,9 +2,12 @@
 
 #include <Arduino.h>
 
-#include "SdFat_Adafruit_Fork.h"
 #include "Adafruit_GC9A01A.h"
 #include "Adafruit_GFX.h"
+
+#ifndef DISABLE_FS_H_WARNING
+#define DISABLE_FS_H_WARNING
+#endif
 #include "Adafruit_ImageReader.h"
 
 #include "FreeMono18pt7b.h"
@@ -13,9 +16,8 @@
 #include "config/app_conf.h"
 #include "config/hardware_conf.h"
 #include "structs/DisplayMessage.h"
-#include "util/settings.h"
-
-#include "util/sd_ops.h"
+#include "io/settings.h"
+#include "io/sd_ops.h"
 
 #include "taskglobals.h"
 
@@ -201,8 +203,6 @@ void task_displayImageOrText(void *pv) {
 
                         strncpy(subtitleLine2, dp_copy, LINE_2_MAXCHARS);
                     }
-
-                    debuglnF("we made it chat");
 
                     debugln(subtitleLine1);
                     debugln(subtitleLine2);

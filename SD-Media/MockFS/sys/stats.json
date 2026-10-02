@@ -1,6 +1,27 @@
 {
-  "Uptime": 56,
-  "ButtonPresses": [1, 2, 3, 5, 236, 6, 7, 8, 999],
-  "ImagesShown": 6,
-  "SoundsPlayed": 7
+  "System": {
+    "BootCount": 2,
+    "UptimeOverall": 5600,
+    "UptimeConnection": 300,
+    "UptimeModeStandard": 400,
+    "UptimeModeGaming": 58,
+    "UptimeModeAV": 230
+  },
+  "buttonPresses": {
+    "0": 1,
+    "1": 2,
+    "2": 0,
+    "3": 0,
+    "4": 3,
+    "5": 8,
+    "6": 3
+  },
+  "User": {
+    "mmTravel": 20,
+    "haptics": 1,
+    "letters": 15,
+    "words": 3,
+    "images": 6,
+    "sounds": 7
+  }
 }

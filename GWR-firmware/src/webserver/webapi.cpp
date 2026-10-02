@@ -1,7 +1,7 @@
 #include "webapi.h"
 
 #include <Arduino.h>
-#include <SD.h>
+#include <SD.h> // todo use sd ops
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -10,9 +10,11 @@
 
 #include "config/app_conf.h"
 #include "config/constants.h"
+#include "config/hardware_conf.h" // todo use sd ops
+
 #include "structs/AudioMessage.h"
 #include "structs/DisplayMessage.h"
-#include "util/settings.h"
+#include "io/settings.h"
 #include "webserver/index.hpp"
 #include "taskglobals.h"
 

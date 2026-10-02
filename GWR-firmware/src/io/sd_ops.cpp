@@ -115,6 +115,6 @@ bool jdocToFile(const char* fspath, const JsonDocument &jdoc) {
 
 #include <SD.h>
 
-#warning "not implemented yet"
+#error "not implemented yet"
 
 #endif

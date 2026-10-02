@@ -4,7 +4,7 @@
 
 #include "config/app_conf.h"
 #include "config/hardware_conf.h"
-#include "util/settings.h"
+#include "io/settings.h"
 #include "structs/AudioMessage.h"
 #include "structs/UserInputMessage.h"
 #include "structs/MouseClickMessage.h"
